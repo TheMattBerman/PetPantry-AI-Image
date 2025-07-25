@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(224, 71.4%, 4.1%);
+  --muted: hsl(220, 14.3%, 95.9%);
+  --muted-foreground: hsl(220, 8.9%, 46.1%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(224, 71.4%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(224, 71.4%, 4.1%);
+  --border: hsl(220, 13%, 91%);
+  --input: hsl(220, 13%, 91%);
+  --primary: hsl(24, 95%, 53%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(220, 14.3%, 95.9%);
+  --secondary-foreground: hsl(220, 8.9%, 46.1%);
+  --accent: hsl(220, 14.3%, 95.9%);
+  --accent-foreground: hsl(220, 8.9%, 46.1%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(224, 71.4%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Pet Pantry Brand Colors */
+  --pet-orange: hsl(24, 95%, 53%);
+  --pet-blue: hsl(214, 86%, 58%);
+  --pet-green: hsl(142, 76%, 36%);
+  --pet-gray: hsl(215, 28%, 17%);
+}
+
+.dark {
+  --background: hsl(224, 71.4%, 4.1%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(215, 27.9%, 16.9%);
+  --muted-foreground: hsl(217.9, 10.6%, 64.9%);
+  --popover: hsl(224, 71.4%, 4.1%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(224, 71.4%, 4.1%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(215, 27.9%, 16.9%);
+  --input: hsl(215, 27.9%, 16.9%);
+  --primary: hsl(24, 95%, 53%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(215, 27.9%, 16.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(215, 27.9%, 16.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(216, 12.2%, 83.9%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .upload-zone {
+    @apply border-2 border-dashed border-gray-300 transition-all duration-300 ease-in-out;
+  }
+  
+  .upload-zone.dragover {
+    @apply border-orange-500 bg-orange-50;
+  }
+  
+  .theme-card {
+    @apply transition-all duration-300 ease-in-out cursor-pointer;
+  }
+  
+  .theme-card:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+  
+  .theme-card.selected {
+    @apply border-orange-500 bg-orange-50;
+  }
+  
+  .loading-spinner {
+    @apply w-10 h-10 border-4 border-gray-200 border-t-orange-500 rounded-full animate-spin;
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from { 
+      opacity: 0; 
+      transform: translateY(20px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+}
