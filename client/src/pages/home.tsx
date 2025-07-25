@@ -3,9 +3,9 @@ import HeroSection from "@/components/hero-section";
 import UploadSection from "@/components/upload-section";
 import ThemeSelection from "@/components/theme-selection";
 import CustomizationForm from "@/components/customization-form";
+import EmailGate from "@/components/email-gate";
 import ProcessingSection from "@/components/processing-section";
 import ResultSection from "@/components/result-section";
-import SuccessModal from "@/components/success-modal";
 import { PawPrint } from "lucide-react";
 import type { AppState, Theme } from "@/lib/types";
 
@@ -15,8 +15,8 @@ export default function Home() {
     uploadedFile: null,
     selectedTheme: null,
     petData: null,
+    userEmail: null,
     transformationResult: null,
-    showSuccessModal: false,
   });
 
   const updateState = (updates: Partial<AppState>) => {
@@ -29,8 +29,8 @@ export default function Home() {
       uploadedFile: null,
       selectedTheme: null,
       petData: null,
+      userEmail: null,
       transformationResult: null,
-      showSuccessModal: false,
     });
   };
 
@@ -78,7 +78,15 @@ export default function Home() {
         {appState.currentStep === 'customize' && (
           <CustomizationForm
             selectedTheme={appState.selectedTheme!}
-            onSubmit={(petData) => updateState({ petData, currentStep: 'processing' })}
+            onSubmit={(petData) => updateState({ petData, currentStep: 'email-gate' })}
+          />
+        )}
+        
+        {appState.currentStep === 'email-gate' && (
+          <EmailGate
+            petData={appState.petData!}
+            selectedTheme={appState.selectedTheme!}
+            onEmailSubmit={(email) => updateState({ userEmail: email, currentStep: 'processing' })}
           />
         )}
         
@@ -93,7 +101,7 @@ export default function Home() {
           <ResultSection
             transformationResult={appState.transformationResult!}
             petData={appState.petData!}
-            onEmailSubmit={() => updateState({ showSuccessModal: true })}
+            userEmail={appState.userEmail!}
             onCreateAnother={resetApp}
           />
         )}
@@ -119,10 +127,7 @@ export default function Home() {
         </div>
       </footer>
 
-      <SuccessModal
-        isOpen={appState.showSuccessModal}
-        onClose={() => updateState({ showSuccessModal: false })}
-      />
+
     </div>
   );
 }

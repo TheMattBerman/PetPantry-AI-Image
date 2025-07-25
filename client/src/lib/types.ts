@@ -1,6 +1,6 @@
 export type Theme = 'baseball' | 'superhero';
 
-export type Step = 'hero' | 'upload' | 'theme' | 'customize' | 'processing' | 'result';
+export type Step = 'hero' | 'upload' | 'theme' | 'customize' | 'email-gate' | 'processing' | 'result';
 
 export interface PetData {
   name: string;
@@ -24,6 +24,6 @@ export interface AppState {
   uploadedFile: File | null;
   selectedTheme: Theme | null;
   petData: PetData | null;
+  userEmail: string | null;
   transformationResult: TransformationResult | null;
-  showSuccessModal: boolean;
 }

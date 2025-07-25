@@ -1,46 +1,18 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Download, Facebook, Twitter, Instagram, Link2, Trophy, Users, Plus, Heart, Share2, Download as DownloadIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { TransformationResult, PetData } from "@/lib/types";
 
-const emailSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-});
-
 interface ResultSectionProps {
   transformationResult: TransformationResult;
   petData: PetData;
-  onEmailSubmit: () => void;
+  userEmail: string;
   onCreateAnother: () => void;
 }
 
-export default function ResultSection({ transformationResult, petData, onEmailSubmit, onCreateAnother }: ResultSectionProps) {
-  const [emailSubmitted, setEmailSubmitted] = useState(false);
+export default function ResultSection({ transformationResult, petData, userEmail, onCreateAnother }: ResultSectionProps) {
   const { toast } = useToast();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isValid },
-  } = useForm<{ email: string }>({
-    resolver: zodResolver(emailSchema),
-    mode: 'onChange',
-  });
-
-  const onEmailFormSubmit = (data: { email: string }) => {
-    setEmailSubmitted(true);
-    onEmailSubmit();
-    toast({
-      title: "Success!",
-      description: "Your high-resolution image has been sent to your email.",
-    });
-  };
 
   const handleCopyLink = async () => {
     try {
@@ -138,43 +110,28 @@ export default function ResultSection({ transformationResult, petData, onEmailSu
 
           {/* Action Panel */}
           <div className="space-y-6">
-            {/* Email Gate */}
-            <Card className="bg-orange-50 border-orange-200">
+            {/* Download Section */}
+            <Card className="bg-green-50 border-green-200">
               <CardContent className="p-6">
-                <h4 className="font-bold text-gray-800 mb-2">Get Your High-Resolution Image</h4>
-                <p className="text-sm text-gray-600 mb-4">
-                  Enter your email to download and share your pet's transformation
-                </p>
-
-                {!emailSubmitted ? (
-                  <form onSubmit={handleSubmit(onEmailFormSubmit)} className="space-y-3">
-                    <Input
-                      {...register('email')}
-                      type="email"
-                      placeholder="Enter your email address"
-                      className="border-gray-300"
-                    />
-                    {errors.email && (
-                      <p className="text-red-500 text-sm">{errors.email.message}</p>
-                    )}
-                    <Button 
-                      type="submit" 
-                      disabled={!isValid}
-                      className="w-full bg-orange-500 hover:bg-orange-600"
-                    >
-                      <Download className="mr-2 w-4 h-4" />
-                      Download High-Res Image
-                    </Button>
-                  </form>
-                ) : (
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Download className="text-white w-6 h-6" />
-                    </div>
-                    <p className="text-green-700 font-medium">Email sent successfully!</p>
-                    <p className="text-sm text-gray-600">Check your inbox for the high-res image.</p>
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Download className="text-white w-6 h-6" />
                   </div>
-                )}
+                  <h4 className="font-bold text-gray-800 mb-2">Your Image is Ready!</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    High-resolution version sent to: <strong>{userEmail}</strong>
+                  </p>
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => toast({
+                      title: "Download Starting",
+                      description: "Your high-resolution image is downloading now.",
+                    })}
+                  >
+                    <Download className="mr-2 w-4 h-4" />
+                    Download High-Res Image
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
