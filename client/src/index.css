@@ -220,6 +220,72 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Mobile-first form enhancements */
+  .form-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .form-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-card:focus-within {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    border-color: var(--brand-accent);
+  }
+
+  /* Enhanced mobile input styles */
+  .mobile-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    font-size: 16px; /* Prevents zoom on iOS */
+    line-height: 1.5;
+  }
+
+  .mobile-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(213, 168, 0, 0.2);
+  }
+
+  /* Trait selection animations */
+  @keyframes traitSelect {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1.02); }
+  }
+
+  .trait-selected {
+    animation: traitSelect 0.3s ease-out;
+  }
+
+  /* Progress indicator */
+  .progress-ring {
+    transition: stroke-dasharray 0.3s ease;
+  }
+
+  /* Mobile-optimized button animations */
+  .mobile-button {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-button:active {
+    transform: scale(0.98);
+  }
+
+  /* Smooth scrolling for mobile */
+  @media (max-width: 768px) {
+    .form-container {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
 }
 
 /* Brand Color Utilities - Centralized color management */
