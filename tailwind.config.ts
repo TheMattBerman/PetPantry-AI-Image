@@ -61,6 +61,33 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        // Brand color system - centralized color management
+        brand: {
+          primary: {
+            DEFAULT: "var(--brand-primary)",
+            light: "var(--brand-primary-light)",
+            dark: "var(--brand-primary-dark)",
+          },
+          accent: {
+            DEFAULT: "var(--brand-accent)",
+            light: "var(--brand-accent-light)",
+            dark: "var(--brand-accent-dark)",
+          }
+        },
+        // Semantic application colors
+        app: {
+          success: "var(--app-success)",
+          warning: "var(--app-warning)",
+          error: "var(--app-error)",
+          info: "var(--app-info)",
+        },
+        // Brand backgrounds
+        "brand-bg": {
+          primary: "var(--brand-bg-primary)",
+          accent: "var(--brand-bg-accent)",
+          "gradient-from": "var(--brand-bg-gradient-from)",
+          "gradient-to": "var(--brand-bg-gradient-to)",
+        },
       },
       keyframes: {
         "accordion-down": {

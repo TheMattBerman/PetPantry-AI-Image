@@ -127,7 +127,7 @@ export default function ThemeSelection({ selectedTheme, onThemeSelected }: Theme
           <Button
             disabled={!selectedTheme}
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
+            className="brand-button disabled:opacity-50"
           >
             Continue to Customize
             <ArrowRight className="ml-2 w-4 h-4" />

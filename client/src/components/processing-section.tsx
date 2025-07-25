@@ -94,7 +94,7 @@ export default function ProcessingSection({ selectedTheme, onComplete }: Process
               {index < currentStepIndex ? (
                 <CheckCircle className="w-4 h-4 text-green-500" />
               ) : index === currentStepIndex ? (
-                <Loader2 className="w-4 h-4 text-accent animate-spin" />
+                <Loader2 className="w-4 h-4 text-brand-accent animate-spin" />
               ) : (
                 <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
               )}

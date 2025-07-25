@@ -24,9 +24,26 @@
   --ring: hsl(224, 71.4%, 4.1%);
   --radius: 0.5rem;
   
-  /* Brand Colors */
-  --brand-primary: hsl(297, 100%, 18%);
-  --brand-accent: hsl(47, 100%, 42%);
+  /* Brand Colors - Centralized color management */
+  --brand-primary: hsl(297, 100%, 18%);        /* Deep purple #55005c */
+  --brand-primary-light: hsl(297, 100%, 25%);  /* Lighter purple for hover states */
+  --brand-primary-dark: hsl(297, 100%, 15%);   /* Darker purple for active states */
+  
+  --brand-accent: hsl(47, 100%, 42%);          /* Golden yellow #d5a800 */
+  --brand-accent-light: hsl(47, 100%, 50%);    /* Lighter yellow for hover states */
+  --brand-accent-dark: hsl(47, 100%, 35%);     /* Darker yellow for active states */
+  
+  /* Semantic application colors */
+  --app-success: hsl(142, 76%, 36%);           /* Green for success states */
+  --app-warning: hsl(38, 92%, 50%);            /* Orange for warnings */
+  --app-error: hsl(0, 84.2%, 60.2%);          /* Red for errors */
+  --app-info: hsl(214, 86%, 58%);             /* Blue for info */
+  
+  /* Brand-specific background variations */
+  --brand-bg-primary: hsl(var(--brand-primary) / 0.1);
+  --brand-bg-accent: hsl(var(--brand-accent) / 0.1);
+  --brand-bg-gradient-from: hsl(var(--brand-primary) / 0.05);
+  --brand-bg-gradient-to: hsl(var(--brand-accent) / 0.05);
 }
 
 .dark {
@@ -49,6 +66,12 @@
   --destructive: hsl(0, 62.8%, 30.6%);
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(216, 12.2%, 83.9%);
+  
+  /* Dark mode brand color adjustments */
+  --brand-primary-light: hsl(297, 100%, 30%);
+  --brand-accent-light: hsl(47, 100%, 55%);
+  --brand-bg-primary: hsl(var(--brand-primary) / 0.15);
+  --brand-bg-accent: hsl(var(--brand-accent) / 0.15);
 }
 
 @layer base {
@@ -62,13 +85,14 @@
 }
 
 @layer components {
+  /* Semantic component styles using centralized color variables */
   .upload-zone {
     @apply border-2 border-dashed border-gray-300 transition-all duration-300 ease-in-out;
   }
   
   .upload-zone.dragover {
-    @apply border-accent;
-    background-color: hsl(var(--accent) / 0.1);
+    border-color: var(--brand-accent);
+    background-color: var(--brand-bg-accent);
   }
   
   .theme-card {
@@ -80,13 +104,27 @@
   }
   
   .theme-card.selected {
-    @apply border-accent;
-    background-color: hsl(var(--accent) / 0.1);
+    border-color: var(--brand-accent);
+    background-color: var(--brand-bg-accent);
   }
   
   .loading-spinner {
     @apply w-10 h-10 border-4 border-gray-200 rounded-full animate-spin;
-    border-top-color: hsl(var(--accent));
+    border-top-color: var(--brand-accent);
+  }
+  
+  /* Brand button variants */
+  .btn-brand-primary {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+  }
+  
+  .btn-brand-primary:hover {
+    background-color: var(--brand-primary-light);
+  }
+  
+  .btn-brand-primary:active {
+    background-color: var(--brand-primary-dark);
   }
   
   .fade-in {
@@ -103,4 +141,16 @@
       transform: translateY(0); 
     }
   }
+}
+
+/* Brand Color Utilities - Centralized color management */
+@layer utilities {
+  .text-brand-primary { color: var(--brand-primary); }
+  .text-brand-accent { color: var(--brand-accent); }
+  .bg-brand-primary { background-color: var(--brand-primary); }
+  .bg-brand-accent { background-color: var(--brand-accent); }
+  .border-brand-primary { border-color: var(--brand-primary); }
+  .border-brand-accent { border-color: var(--brand-accent); }
+  .bg-brand-bg-primary { background-color: var(--brand-bg-primary); }
+  .bg-brand-bg-accent { background-color: var(--brand-bg-accent); }
 }
