@@ -141,6 +141,85 @@
       transform: translateY(0); 
     }
   }
+
+  /* Enhanced theme card animations */
+  .theme-card-3d {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+
+  .theme-card-3d:hover {
+    transform: rotateY(5deg) rotateX(5deg) translateZ(50px);
+  }
+
+  /* Floating particle animations */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+  }
+
+  @keyframes sparkle {
+    0%, 100% { 
+      opacity: 0; 
+      transform: scale(0) rotate(0deg); 
+    }
+    50% { 
+      opacity: 1; 
+      transform: scale(1) rotate(180deg); 
+    }
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { 
+      box-shadow: 0 0 20px rgba(213, 168, 0, 0.3);
+    }
+    50% { 
+      box-shadow: 0 0 40px rgba(213, 168, 0, 0.6), 0 0 60px rgba(213, 168, 0, 0.3);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-sparkle {
+    animation: sparkle 2s ease-in-out infinite;
+  }
+
+  .animate-glow-pulse {
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+
+  /* Enhanced hover effects for theme cards */
+  .theme-card-enhanced {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  .theme-card-enhanced:hover {
+    transform: translateY(-8px) scale(1.02);
+    filter: brightness(1.05);
+  }
+
+  /* Gradient text animation */
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .text-gradient-animated {
+    background: linear-gradient(-45deg, var(--brand-primary), var(--brand-accent), var(--brand-primary), var(--brand-accent));
+    background-size: 400% 400%;
+    animation: gradientShift 3s ease infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
 /* Brand Color Utilities - Centralized color management */
