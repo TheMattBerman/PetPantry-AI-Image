@@ -114,3 +114,12 @@ The application follows a full-stack architecture with clear separation between 
 5. **Theme-Based Processing**: Separate processing flows for different themes allow for specialized AI model integration
 
 6. **Component Architecture**: Radix UI + shadcn/ui provides accessible, customizable components with consistent design system
+
+## Recent Changes
+
+### Brand Colors Update (July 25, 2025)
+- Updated primary brand color from orange (#ff6b35) to deep purple (#55005c / hsl(297, 100%, 18%))
+- Updated accent color to golden yellow (#d5a800 / hsl(47, 100%, 42%))
+- Replaced all hardcoded orange color references across components with brand color CSS variables
+- Updated CSS custom properties for both light and dark modes
+- Applied changes to: hero section, theme selection, upload section, customization form, email gate, processing section, result section, success modal, and header components

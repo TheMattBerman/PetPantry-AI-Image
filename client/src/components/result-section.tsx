@@ -83,7 +83,7 @@ export default function ResultSection({ transformationResult, petData, userEmail
               <CardContent className="p-4">
                 <div className="flex justify-center space-x-6 text-sm">
                   <div className="text-center">
-                    <div className="font-bold text-orange-500 flex items-center justify-center">
+                    <div className="font-bold text-accent flex items-center justify-center">
                       <Heart className="w-4 h-4 mr-1" />
                       {transformationResult.stats.likes}
                     </div>

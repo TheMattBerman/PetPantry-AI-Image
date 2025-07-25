@@ -23,7 +23,7 @@ export default function ThemeSelection({ selectedTheme, onThemeSelected }: Theme
           {/* Volleyball Card Theme */}
           <Card
             className={`theme-card bg-gradient-to-br from-blue-50 to-indigo-100 border-2 cursor-pointer ${
-              selectedTheme === 'baseball' ? 'selected border-orange-500' : 'border-transparent'
+              selectedTheme === 'baseball' ? 'selected' : 'border-transparent'
             }`}
             onClick={() => onThemeSelected('baseball')}
           >
@@ -74,7 +74,7 @@ export default function ThemeSelection({ selectedTheme, onThemeSelected }: Theme
           {/* Superhero Theme */}
           <Card
             className={`theme-card bg-gradient-to-br from-purple-50 to-pink-100 border-2 cursor-pointer ${
-              selectedTheme === 'superhero' ? 'selected border-orange-500' : 'border-transparent'
+              selectedTheme === 'superhero' ? 'selected' : 'border-transparent'
             }`}
             onClick={() => onThemeSelected('superhero')}
           >
@@ -127,7 +127,7 @@ export default function ThemeSelection({ selectedTheme, onThemeSelected }: Theme
           <Button
             disabled={!selectedTheme}
             size="lg"
-            className="bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
           >
             Continue to Customize
             <ArrowRight className="ml-2 w-4 h-4" />

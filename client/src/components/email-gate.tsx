@@ -46,7 +46,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="text-white w-8 h-8" />
           </div>
           <h3 className="text-2xl font-bold text-gray-800 mb-2">
@@ -59,7 +59,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
         </div>
 
         {/* Preview Card */}
-        <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 border-orange-200 mb-8">
+        <Card className="bg-gradient-to-br from-accent/10 to-accent/20 border-accent/20 mb-8">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -72,7 +72,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
                   )}
                 </p>
               </div>
-              <Sparkles className="text-orange-500 w-8 h-8" />
+              <Sparkles className="text-accent w-8 h-8" />
             </div>
           </CardContent>
         </Card>
@@ -148,7 +148,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
               type="submit"
               disabled={!isValid || isSubmitting}
               size="lg"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 disabled:opacity-50"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

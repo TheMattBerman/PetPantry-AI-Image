@@ -170,7 +170,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
               type="submit"
               disabled={!isValid}
               size="lg"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 disabled:opacity-50"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 disabled:opacity-50"
             >
               <Sparkles className="mr-2 w-5 h-5" />
               Generate My Pet's {selectedTheme === 'baseball' ? 'Card' : 'Hero'}

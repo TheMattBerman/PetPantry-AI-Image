@@ -40,7 +40,7 @@ export default function SuccessModal({ isOpen, onClose }: SuccessModalProps) {
 
             <Button
               onClick={onClose}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2"
             >
               Continue Sharing
             </Button>

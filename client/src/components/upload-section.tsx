@@ -159,7 +159,7 @@ export default function UploadSection({ onFileUploaded, uploadedFile }: UploadSe
           <Button
             disabled={!uploadedFile}
             size="lg"
-            className="bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
           >
             Continue to Themes
             <ArrowRight className="ml-2 w-4 h-4" />
