@@ -47,6 +47,7 @@ const BREEDS = [
 
 export default function CustomizationForm({ selectedTheme, onSubmit }: CustomizationFormProps) {
   const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
+  const [selectedBreed, setSelectedBreed] = useState<string>('');
 
   const {
     register,
@@ -71,6 +72,11 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
     }
     setSelectedTraits(newTraits);
     setValue('traits', newTraits);
+  };
+
+  const handleBreedChange = (value: string) => {
+    setSelectedBreed(value);
+    setValue('breed', value);
   };
 
   const onFormSubmit = (data: PetData) => {
@@ -140,7 +146,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                   <p className="text-sm text-gray-500">Optional - helps us customize better</p>
                 </div>
               </div>
-              <Select onValueChange={(value) => setValue('breed', value)}>
+              <Select onValueChange={handleBreedChange}>
                 <SelectTrigger className="text-lg p-4 border-2 border-gray-200 focus:border-brand-accent rounded-xl transition-all">
                   <SelectValue placeholder="Choose breed or skip" />
                 </SelectTrigger>
@@ -152,6 +158,18 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Custom breed input when "Other" is selected */}
+              {selectedBreed === 'other' && (
+                <div className="mt-4 animate-fade-in">
+                  <Input
+                    {...register('breed')}
+                    placeholder="Tell us what breed your pet is"
+                    className="text-lg p-4 border-2 border-gray-200 focus:border-brand-accent rounded-xl transition-all mobile-input"
+                    onChange={(e) => setValue('breed', e.target.value)}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
