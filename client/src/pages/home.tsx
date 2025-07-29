@@ -101,6 +101,7 @@ export default function Home() {
           <ResultSection
             transformationResult={appState.transformationResult!}
             petData={appState.petData!}
+            selectedTheme={appState.selectedTheme!}
             userEmail={appState.userEmail!}
             onCreateAnother={resetApp}
           />

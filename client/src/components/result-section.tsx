@@ -2,21 +2,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, Facebook, Twitter, Instagram, Link2, Trophy, Users, Plus, Heart, Share2, Download as DownloadIcon, Star, Zap, Award, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { TransformationResult, PetData } from "@/lib/types";
+import type { TransformationResult, PetData, Theme } from "@/lib/types";
 
 interface ResultSectionProps {
   transformationResult: TransformationResult;
   petData: PetData;
+  selectedTheme: Theme;
   userEmail: string;
   onCreateAnother: () => void;
 }
 
-export default function ResultSection({ transformationResult, petData, userEmail, onCreateAnother }: ResultSectionProps) {
+export default function ResultSection({ transformationResult, petData, selectedTheme, userEmail, onCreateAnother }: ResultSectionProps) {
   const { toast } = useToast();
 
   // Generate theme-appropriate fun facts and quotes
   const generateFunFacts = () => {
-    const isBaseball = transformationResult.theme === 'baseball';
+    const isBaseball = selectedTheme === 'baseball';
     const petName = petData.name;
     const breed = petData.breed;
     const traits = petData.traits || [];
@@ -117,30 +118,71 @@ export default function ResultSection({ transformationResult, petData, userEmail
     }
   };
 
-  const handleSocialShare = (platform: string) => {
-    const shareText = `Check out my pet ${petData.name}'s amazing transformation! 🐾`;
+  const handleSocialShare = async (platform: string) => {
+    const shareText = `Check out my pet ${petData.name}'s amazing ${selectedTheme === 'baseball' ? 'baseball card' : 'superhero'} transformation! 🐾✨`;
     const shareUrl = window.location.href;
+    const imageUrl = transformationResult.transformedImageUrl;
+    
+    // Enhanced share text with fun facts
+    const enhancedShareText = `🎉 Meet ${petData.name}! Just transformed into ${selectedTheme === 'baseball' ? 'a legendary baseball player ⚾' : 'an epic superhero 🦸‍♂️'}! ${shareText}`;
     
     let url = '';
     switch (platform) {
       case 'facebook':
-        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+        // Facebook Open Graph will automatically pull image from URL
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(enhancedShareText)}`;
         break;
       case 'twitter':
-        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+        // Twitter will show image preview from URL
+        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(enhancedShareText)}&url=${encodeURIComponent(shareUrl)}`;
         break;
       case 'instagram':
-        // Instagram doesn't support direct URL sharing, so we'll copy to clipboard
-        navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-        toast({
-          title: "Content copied!",
-          description: "Share text copied to clipboard. Paste it in your Instagram post!",
-        });
+        // For Instagram, copy enhanced text with instructions to save image
+        const instagramText = `${enhancedShareText}\n\n📱 Tip: Save the image from ${shareUrl} and post it with this caption!`;
+        try {
+          await navigator.clipboard.writeText(instagramText);
+          toast({
+            title: "Instagram content ready!",
+            description: "Caption copied! Visit the link to save your image, then paste this caption in Instagram.",
+          });
+        } catch (err) {
+          toast({
+            title: "Content ready!",
+            description: "Visit the link to save your image for Instagram sharing.",
+          });
+        }
+        return;
+      case 'download-share':
+        // Special case for downloading image with share text
+        try {
+          await navigator.clipboard.writeText(enhancedShareText);
+          // Trigger download
+          const link = document.createElement('a');
+          link.href = imageUrl;
+          link.download = `${petData.name}-${selectedTheme}-transformation.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          toast({
+            title: "Download & Share Ready!",
+            description: "Image downloaded and share text copied to clipboard!",
+          });
+        } catch (err) {
+          toast({
+            title: "Download started",
+            description: "Your image is downloading now.",
+          });
+        }
         return;
     }
     
     if (url) {
       window.open(url, '_blank', 'width=600,height=400');
+      toast({
+        title: "Share window opened!",
+        description: "Your post will include the image and custom text.",
+      });
     }
   };
 
@@ -172,7 +214,7 @@ export default function ResultSection({ transformationResult, petData, userEmail
                 <CardContent className="p-6">
                   <div className="text-center mb-4">
                     <h4 className="text-lg font-bold text-gray-800 mb-2">
-                      {transformationResult.theme === 'baseball' ? '⚾ Player Stats' : '🦸 Hero Stats'}
+                      {selectedTheme === 'baseball' ? '⚾ Player Stats' : '🦸 Hero Stats'}
                     </h4>
                     <p className="text-sm text-gray-600">AI-generated based on {petData.name}'s traits</p>
                   </div>
@@ -280,9 +322,31 @@ export default function ResultSection({ transformationResult, petData, userEmail
               </CardContent>
             </Card>
 
+            {/* Download & Share Special Button */}
+            <Card className="bg-gradient-to-r from-brand-accent/20 to-brand-primary/20 border-0 shadow-lg mb-6">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <h4 className="font-bold text-gray-800 mb-2">📱 Perfect for Social Media</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Download image + get pre-written caption ready to post!
+                  </p>
+                  <Button
+                    onClick={() => handleSocialShare('download-share')}
+                    className="w-full bg-gradient-to-r from-brand-primary to-brand-primary-light hover:from-brand-primary-light hover:to-brand-primary text-white font-semibold py-3"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Download Image + Copy Caption
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Social Sharing */}
             <div>
-              <h4 className="font-bold text-gray-800 mb-4">Share Your Pet's Transformation</h4>
+              <h4 className="font-bold text-gray-800 mb-4">Share Directly to Social Media</h4>
+              <p className="text-sm text-gray-500 mb-4">
+                These buttons will pre-load your image and caption for easy sharing
+              </p>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={() => handleSocialShare('facebook')}
