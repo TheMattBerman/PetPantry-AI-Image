@@ -32,35 +32,47 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Example Gallery */}
+        {/* Example Gallery - Vertical Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="rounded-lg overflow-hidden shadow-md">
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
             <img
-              src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400"
-              alt="Happy dog with owner"
-              className="w-full h-32 object-cover"
+              src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
+              alt="Happy dog transformation example"
+              className="w-full h-48 object-cover"
             />
+            <div className="p-3 bg-white">
+              <p className="text-xs text-gray-600 font-medium">Baseball Star</p>
+            </div>
           </div>
-          <div className="rounded-lg overflow-hidden shadow-md">
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
             <img
-              src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400"
-              alt="Dog with baseball"
-              className="w-full h-32 object-cover"
+              src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
+              alt="Dog superhero transformation example"
+              className="w-full h-48 object-cover"
             />
+            <div className="p-3 bg-white">
+              <p className="text-xs text-gray-600 font-medium">Superhero</p>
+            </div>
           </div>
-          <div className="rounded-lg overflow-hidden shadow-md">
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
             <img
-              src="https://images.unsplash.com/photo-1558788353-f76d92427f16?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200"
-              alt="Pet in costume"
-              className="w-full h-32 object-cover"
+              src="https://images.unsplash.com/photo-1558788353-f76d92427f16?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
+              alt="Cat transformation example"
+              className="w-full h-48 object-cover"
             />
+            <div className="p-3 bg-white">
+              <p className="text-xs text-gray-600 font-medium">All-Star Cat</p>
+            </div>
           </div>
-          <div className="rounded-lg overflow-hidden shadow-md">
+          <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
             <img
-              src="https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200"
-              alt="Happy pet family"
-              className="w-full h-32 object-cover"
+              src="https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
+              alt="Pet family transformation example"
+              className="w-full h-48 object-cover"
             />
+            <div className="p-3 bg-white">
+              <p className="text-xs text-gray-600 font-medium">Team Captain</p>
+            </div>
           </div>
         </div>
 
