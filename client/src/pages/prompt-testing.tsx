@@ -22,7 +22,7 @@ export default function PromptTesting() {
     prompt: "",
     petName: "Buddy",
     aspectRatio: "1:1",
-    outputFormat: "webp"
+    outputFormat: "png"
   });
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
@@ -297,7 +297,6 @@ export default function PromptTesting() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="webp">WebP</SelectItem>
                         <SelectItem value="png">PNG</SelectItem>
                         <SelectItem value="jpg">JPG</SelectItem>
                       </SelectContent>

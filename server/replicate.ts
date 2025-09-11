@@ -58,7 +58,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
           prompt: prompt,
           num_outputs: 1,
           aspect_ratio: "2:3", // Baseball card ratio
-          output_format: "webp",
+          output_format: "png",
           output_quality: 90,
         }
       }
@@ -112,7 +112,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
           prompt: prompt,
           num_outputs: 1,
           aspect_ratio: "3:4", // Superhero poster ratio
-          output_format: "webp", 
+          output_format: "png", 
           output_quality: 90,
         }
       }
@@ -177,6 +177,11 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
     };
   } catch (error) {
     console.error("Custom prompt image generation error:", error);
+    console.error("Error details:", JSON.stringify(error, null, 2));
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
