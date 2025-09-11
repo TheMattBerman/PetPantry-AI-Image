@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Wand2, Download, Share, Heart } from "lucide-react";
+import { Loader2, Wand2, Download, Share, Heart, Sparkles, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -25,6 +25,10 @@ export default function PromptTesting() {
     outputFormat: "webp"
   });
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [petDescription, setPetDescription] = useState<string>("");
+  const [petTraits, setPetTraits] = useState<string>("");
+  const [petBreed, setPetBreed] = useState<string>("");
   const { toast } = useToast();
 
   const generateImageMutation = useMutation({
@@ -52,6 +56,81 @@ export default function PromptTesting() {
     },
   });
 
+  const enhancePromptMutation = useMutation({
+    mutationFn: async (data: { prompt: string; petName: string }) => {
+      const response = await apiRequest('POST', '/api/enhance-prompt', data);
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to enhance prompt');
+      }
+      return result;
+    },
+    onSuccess: (data) => {
+      setPromptData({ ...promptData, prompt: data.enhancedPrompt });
+      toast({
+        title: "Prompt Enhanced!",
+        description: "Your prompt has been improved with AI suggestions.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Enhancement Failed",
+        description: error instanceof Error ? error.message : "Failed to enhance prompt",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateSuggestionsMutation = useMutation({
+    mutationFn: async (data: { theme: string; petName: string }) => {
+      const response = await apiRequest('POST', '/api/prompt-suggestions', data);
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to generate suggestions');
+      }
+      return result;
+    },
+    onSuccess: (data) => {
+      setAiSuggestions(data.suggestions);
+      toast({
+        title: "AI Suggestions Generated!",
+        description: `Generated ${data.suggestions.length} creative prompt ideas.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Suggestions Failed",
+        description: error instanceof Error ? error.message : "Failed to generate suggestions",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateDescriptionMutation = useMutation({
+    mutationFn: async (data: { petName: string; traits: string[]; breed?: string }) => {
+      const response = await apiRequest('POST', '/api/pet-description', data);
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to generate description');
+      }
+      return result;
+    },
+    onSuccess: (data) => {
+      setPetDescription(data.description);
+      toast({
+        title: "Description Generated!",
+        description: "AI has created a creative description for your pet.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Description Failed",
+        description: error instanceof Error ? error.message : "Failed to generate description",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleGenerate = () => {
     if (!promptData.prompt.trim()) {
       toast({
@@ -62,6 +141,53 @@ export default function PromptTesting() {
       return;
     }
     generateImageMutation.mutate(promptData);
+  };
+
+  const handleEnhancePrompt = () => {
+    if (!promptData.prompt.trim()) {
+      toast({
+        title: "Missing Prompt",
+        description: "Please enter a prompt to enhance.",
+        variant: "destructive",
+      });
+      return;
+    }
+    enhancePromptMutation.mutate({
+      prompt: promptData.prompt,
+      petName: promptData.petName,
+    });
+  };
+
+  const handleGenerateSuggestions = (theme: string) => {
+    if (!promptData.petName.trim()) {
+      toast({
+        title: "Missing Pet Name",
+        description: "Please enter a pet name to generate suggestions.",
+        variant: "destructive",
+      });
+      return;
+    }
+    generateSuggestionsMutation.mutate({
+      theme,
+      petName: promptData.petName,
+    });
+  };
+
+  const handleGenerateDescription = () => {
+    if (!promptData.petName.trim()) {
+      toast({
+        title: "Missing Pet Name",
+        description: "Please enter a pet name to generate a description.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const traits = petTraits.split(',').map(t => t.trim()).filter(t => t.length > 0);
+    generateDescriptionMutation.mutate({
+      petName: promptData.petName,
+      traits,
+      breed: petBreed.trim() || undefined,
+    });
   };
 
   const examplePrompts = [
@@ -108,7 +234,28 @@ export default function PromptTesting() {
                 </div>
 
                 <div>
-                  <Label htmlFor="custom-prompt">Custom Prompt</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="custom-prompt">Custom Prompt</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEnhancePrompt}
+                      disabled={enhancePromptMutation.isPending || !promptData.prompt.trim()}
+                      data-testid="button-enhance-prompt"
+                    >
+                      {enhancePromptMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enhancing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Enhance with AI
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   <Textarea
                     id="custom-prompt"
                     data-testid="textarea-custom-prompt"
@@ -180,24 +327,130 @@ export default function PromptTesting() {
               </CardContent>
             </Card>
 
-            {/* Example Prompts */}
+            {/* AI Suggestions */}
             <Card>
               <CardHeader>
-                <CardTitle>Example Prompts</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5" />
+                  AI-Generated Suggestions
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {examplePrompts.map((prompt, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => setPromptData({ ...promptData, prompt })}
-                      data-testid={`example-prompt-${index}`}
-                    >
-                      <p className="text-sm text-gray-700">{prompt}</p>
+                <div className="space-y-3 mb-4">
+                  <div className="flex flex-wrap gap-2">
+                    {["Fantasy", "Superhero", "Vintage", "Futuristic", "Artistic"].map((theme) => (
+                      <Button
+                        key={theme}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleGenerateSuggestions(theme)}
+                        disabled={generateSuggestionsMutation.isPending}
+                        data-testid={`button-suggest-${theme.toLowerCase()}`}
+                      >
+                        {theme}
+                      </Button>
+                    ))}
+                  </div>
+                  {generateSuggestionsMutation.isPending && (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                      <span className="ml-2 text-gray-600">Generating AI suggestions...</span>
                     </div>
-                  ))}
+                  )}
                 </div>
+                
+                <div className="space-y-3">
+                  {aiSuggestions.length > 0 && (
+                    <>
+                      <h4 className="font-medium text-gray-900">AI Suggestions:</h4>
+                      {aiSuggestions.map((suggestion, index) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                          onClick={() => setPromptData({ ...promptData, prompt: suggestion })}
+                          data-testid={`ai-suggestion-${index}`}
+                        >
+                          <p className="text-sm text-gray-700">{suggestion}</p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  
+                  {aiSuggestions.length === 0 && !generateSuggestionsMutation.isPending && (
+                    <>
+                      <h4 className="font-medium text-gray-900">Example Prompts:</h4>
+                      {examplePrompts.map((prompt, index) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                          onClick={() => setPromptData({ ...promptData, prompt })}
+                          data-testid={`example-prompt-${index}`}
+                        >
+                          <p className="text-sm text-gray-700">{prompt}</p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pet Description Generator */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  Pet Description Generator
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="pet-breed">Pet Breed (Optional)</Label>
+                  <Input
+                    id="pet-breed"
+                    data-testid="input-pet-breed"
+                    value={petBreed}
+                    onChange={(e) => setPetBreed(e.target.value)}
+                    placeholder="e.g., Golden Retriever, Tabby Cat"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="pet-traits">Pet Traits (comma-separated)</Label>
+                  <Input
+                    id="pet-traits"
+                    data-testid="input-pet-traits"
+                    value={petTraits}
+                    onChange={(e) => setPetTraits(e.target.value)}
+                    placeholder="e.g., playful, energetic, loyal, sleepy"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleGenerateDescription}
+                  disabled={generateDescriptionMutation.isPending}
+                  className="w-full"
+                  data-testid="button-generate-description"
+                >
+                  {generateDescriptionMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Description...
+                    </>
+                  ) : (
+                    <>
+                      <Heart className="mr-2 h-4 w-4" />
+                      Generate Pet Description
+                    </>
+                  )}
+                </Button>
+
+                {petDescription && (
+                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h4 className="font-medium text-green-900 mb-2">Generated Description:</h4>
+                    <p className="text-green-800" data-testid="text-pet-description">{petDescription}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

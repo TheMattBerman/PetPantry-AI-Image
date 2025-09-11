@@ -5,6 +5,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertPetTransformationSchema } from "@shared/schema";
 import { createBaseballCard, createSuperheroImage, generateBaseballStats, createCustomPromptImage } from "./replicate";
+import { enhancePrompt, generatePromptSuggestions, generatePetDescription } from "./openai";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -32,6 +33,22 @@ const customPromptSchema = z.object({
   petName: z.string().min(1, "Pet name is required"),
   aspectRatio: z.string().default("1:1"),
   outputFormat: z.string().default("webp"),
+});
+
+const promptEnhancementSchema = z.object({
+  prompt: z.string().min(1, "Prompt is required"),
+  petName: z.string().min(1, "Pet name is required"),
+});
+
+const promptSuggestionsSchema = z.object({
+  theme: z.string().min(1, "Theme is required"),
+  petName: z.string().min(1, "Pet name is required"),
+});
+
+const petDescriptionSchema = z.object({
+  petName: z.string().min(1, "Pet name is required"),
+  traits: z.array(z.string()).default([]),
+  breed: z.string().optional(),
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -279,6 +296,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ 
           message: "Custom prompt generation failed", 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        });
+      }
+    }
+  });
+
+  // Enhance prompt with AI
+  app.post("/api/enhance-prompt", async (req, res) => {
+    try {
+      const validatedData = promptEnhancementSchema.parse(req.body);
+      
+      const result = await enhancePrompt(validatedData.prompt, validatedData.petName);
+      
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          message: "Prompt enhancement failed",
+          error: result.error,
+        });
+      }
+
+      res.json({
+        success: true,
+        enhancedPrompt: result.enhancedPrompt,
+        message: "Prompt enhanced successfully",
+      });
+    } catch (error) {
+      console.error("Prompt enhancement error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ 
+          message: "Prompt enhancement failed", 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        });
+      }
+    }
+  });
+
+  // Generate prompt suggestions
+  app.post("/api/prompt-suggestions", async (req, res) => {
+    try {
+      const validatedData = promptSuggestionsSchema.parse(req.body);
+      
+      const result = await generatePromptSuggestions(validatedData.theme, validatedData.petName);
+      
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          message: "Prompt suggestions generation failed",
+          error: result.error,
+        });
+      }
+
+      res.json({
+        success: true,
+        suggestions: result.suggestions,
+        message: "Prompt suggestions generated successfully",
+      });
+    } catch (error) {
+      console.error("Prompt suggestions generation error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ 
+          message: "Prompt suggestions generation failed", 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        });
+      }
+    }
+  });
+
+  // Generate pet description
+  app.post("/api/pet-description", async (req, res) => {
+    try {
+      const validatedData = petDescriptionSchema.parse(req.body);
+      
+      const result = await generatePetDescription(
+        validatedData.petName, 
+        validatedData.traits, 
+        validatedData.breed
+      );
+      
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          message: "Pet description generation failed",
+          error: result.error,
+        });
+      }
+
+      res.json({
+        success: true,
+        description: result.description,
+        message: "Pet description generated successfully",
+      });
+    } catch (error) {
+      console.error("Pet description generation error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ 
+          message: "Pet description generation failed", 
           error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
