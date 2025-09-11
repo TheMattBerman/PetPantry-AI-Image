@@ -45,7 +45,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     Professional sports photography style, high quality, detailed.`;
 
     const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
+      "google/nano-banana",
       {
         input: {
           prompt: prompt,
@@ -99,7 +99,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     Professional comic book art style, high quality, detailed.`;
 
     const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
+      "google/nano-banana",
       {
         input: {
           prompt: prompt,
