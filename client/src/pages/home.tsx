@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import HeroSection from "@/components/hero-section";
 import UploadSection from "@/components/upload-section";
 import ThemeSelection from "@/components/theme-selection";
@@ -6,7 +7,8 @@ import CustomizationForm from "@/components/customization-form";
 import EmailGate from "@/components/email-gate";
 import ProcessingSection from "@/components/processing-section";
 import ResultSection from "@/components/result-section";
-import { PawPrint } from "lucide-react";
+import { PawPrint, Wand2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { AppState, Theme } from "@/lib/types";
 
 export default function Home() {
@@ -46,7 +48,13 @@ export default function Home() {
               </div>
               <h1 className="text-xl font-bold text-gray-800">The Pet Pantry</h1>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="flex items-center space-x-3">
+              <Link href="/prompt-testing">
+                <Button variant="outline" size="sm" data-testid="link-prompt-testing">
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Prompt Testing
+                </Button>
+              </Link>
               <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                 FREE TOOL
               </span>

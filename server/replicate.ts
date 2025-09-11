@@ -24,6 +24,13 @@ export interface SuperheroInput {
   powers?: string[];
 }
 
+export interface CustomPromptInput {
+  prompt: string;
+  petName: string;
+  aspectRatio: string;
+  outputFormat: string;
+}
+
 export interface TransformationResult {
   success: boolean;
   imageUrl?: string;
@@ -124,6 +131,52 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     };
   } catch (error) {
     console.error("Superhero image generation error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Generate a custom image using a user-provided prompt
+ */
+export async function createCustomPromptImage(input: CustomPromptInput): Promise<TransformationResult> {
+  try {
+    // Use the custom prompt directly with the pet name integrated
+    const enhancedPrompt = `${input.prompt}. Pet name: "${input.petName}". High quality, detailed, professional.`;
+
+    const output = await replicate.run(
+      "google/nano-banana",
+      {
+        input: {
+          prompt: enhancedPrompt,
+          num_outputs: 1,
+          aspect_ratio: input.aspectRatio,
+          output_format: input.outputFormat,
+          output_quality: 90,
+        }
+      }
+    );
+
+    console.log("Custom prompt Replicate output:", JSON.stringify(output, null, 2));
+    console.log("Output type:", typeof output);
+    console.log("Is array:", Array.isArray(output));
+
+    if (Array.isArray(output) && output.length > 0) {
+      console.log("Successfully returning custom prompt image URL:", output[0]);
+      return {
+        success: true,
+        imageUrl: output[0],
+      };
+    }
+
+    return {
+      success: false,
+      error: "No image generated",
+    };
+  } catch (error) {
+    console.error("Custom prompt image generation error:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

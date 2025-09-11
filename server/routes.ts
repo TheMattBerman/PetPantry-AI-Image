@@ -4,7 +4,7 @@ import multer from "multer";
 import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertPetTransformationSchema } from "@shared/schema";
-import { createBaseballCard, createSuperheroImage, generateBaseballStats } from "./replicate";
+import { createBaseballCard, createSuperheroImage, generateBaseballStats, createCustomPromptImage } from "./replicate";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -25,6 +25,13 @@ const emailCaptureSchema = z.object({
   email: z.string().email(),
   name: z.string().optional(),
   transformationId: z.string(),
+});
+
+const customPromptSchema = z.object({
+  prompt: z.string().min(1, "Prompt is required"),
+  petName: z.string().min(1, "Pet name is required"),
+  aspectRatio: z.string().default("1:1"),
+  outputFormat: z.string().default("webp"),
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -235,6 +242,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Share recorded" });
     } catch (error) {
       res.status(500).json({ message: "Failed to record share", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Custom prompt generation endpoint
+  app.post("/api/custom-prompt", async (req, res) => {
+    try {
+      const validatedData = customPromptSchema.parse(req.body);
+      
+      // Generate AI image with custom prompt
+      const transformationResult = await createCustomPromptImage({
+        prompt: validatedData.prompt,
+        petName: validatedData.petName,
+        aspectRatio: validatedData.aspectRatio,
+        outputFormat: validatedData.outputFormat,
+      });
+
+      // Check if AI generation was successful
+      if (!transformationResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: "AI image generation failed",
+          error: transformationResult.error,
+        });
+      }
+
+      res.json({
+        success: true,
+        imageUrl: transformationResult.imageUrl,
+        message: "Custom prompt image generated successfully",
+      });
+    } catch (error) {
+      console.error("Custom prompt generation error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ 
+          message: "Custom prompt generation failed", 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        });
+      }
     }
   });
 
