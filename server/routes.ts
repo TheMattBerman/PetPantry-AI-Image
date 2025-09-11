@@ -4,6 +4,7 @@ import multer from "multer";
 import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertPetTransformationSchema } from "@shared/schema";
+import { createBaseballCard, createSuperheroImage, generateBaseballStats } from "./replicate";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -75,35 +76,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertPetTransformationSchema.parse(req.body);
       
-      // Mock AI processing delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Create transformation record first
       const transformation = await storage.createPetTransformation({
         ...validatedData,
-        originalImageUrl: req.body.originalImageUrl || "mock-url",
+        originalImageUrl: req.body.originalImageUrl || "placeholder-url",
       });
 
-      // Mock transformed image generation
-      const mockTransformedUrl = validatedData.theme === 'baseball' 
-        ? "https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=600"
-        : "https://images.unsplash.com/photo-1571566882372-1598d88abd90?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=600";
+      // Generate AI transformation based on theme
+      let transformationResult;
+      
+      if (validatedData.theme === 'baseball') {
+        // Generate baseball card stats
+        const stats = generateBaseballStats(validatedData.petName, (validatedData.traits as string[]) || []);
+        
+        transformationResult = await createBaseballCard({
+          petImageUrl: transformation.originalImageUrl || "",
+          petName: validatedData.petName,
+          team: "Pet Pantry All-Stars",
+          position: "Good Boy/Girl",
+          stats: stats,
+        });
+      } else if (validatedData.theme === 'superhero') {
+        transformationResult = await createSuperheroImage({
+          petImageUrl: transformation.originalImageUrl || "",
+          petName: validatedData.petName,
+          heroName: `Super ${validatedData.petName}`,
+          powers: (validatedData.traits as string[]) || ["loyalty", "cuteness", "treat detection"],
+        });
+      } else {
+        return res.status(400).json({ 
+          message: "Invalid theme. Must be 'baseball' or 'superhero'" 
+        });
+      }
 
-      // Update with transformed image URL
-      transformation.transformedImageUrl = mockTransformedUrl;
+      // Check if AI generation was successful
+      if (!transformationResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: "AI image generation failed",
+          error: transformationResult.error,
+        });
+      }
+
+      // Update transformation with generated image URL in database
+      console.log("Transformation result:", JSON.stringify(transformationResult, null, 2));
+      console.log("Image URL type:", typeof transformationResult.imageUrl);
+      console.log("Image URL value:", transformationResult.imageUrl);
+      
+      // Handle the case where imageUrl might be an object or stream
+      let imageUrlToStore = null;
+      if (transformationResult.imageUrl) {
+        if (typeof transformationResult.imageUrl === 'string') {
+          imageUrlToStore = transformationResult.imageUrl;
+        } else if (typeof transformationResult.imageUrl === 'object') {
+          // For now, store a placeholder until we fix the Replicate integration
+          imageUrlToStore = 'ai-generated-placeholder-url';
+          console.log("Storing placeholder URL since imageUrl is an object:", transformationResult.imageUrl);
+        } else {
+          imageUrlToStore = String(transformationResult.imageUrl);
+        }
+      }
+      
+      const updatedTransformation = await storage.updatePetTransformation(
+        transformation.id,
+        { transformedImageUrl: imageUrlToStore }
+      );
 
       res.json({
         success: true,
         transformation: {
           id: transformation.id,
-          transformedImageUrl: transformation.transformedImageUrl,
-          stats: transformation.stats,
+          transformedImageUrl: updatedTransformation?.transformedImageUrl || null,
+          stats: updatedTransformation?.stats || transformation.stats,
         },
       });
     } catch (error) {
+      console.error("Transformation error:", error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
-        res.status(500).json({ message: "Transformation failed", error: error instanceof Error ? error.message : "Unknown error" });
+        res.status(500).json({ 
+          message: "Transformation failed", 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        });
       }
     }
   });

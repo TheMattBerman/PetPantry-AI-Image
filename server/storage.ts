@@ -12,6 +12,7 @@ export interface IStorage {
   // Pet transformation methods
   getPetTransformation(id: string): Promise<PetTransformation | undefined>;
   createPetTransformation(transformation: InsertPetTransformation): Promise<PetTransformation>;
+  updatePetTransformation(id: string, updates: Partial<PetTransformation>): Promise<PetTransformation | undefined>;
   updatePetTransformationStats(id: string, stats: { likes: number; shares: number; downloads: number }): Promise<void>;
   getUserTransformations(userId: string): Promise<PetTransformation[]>;
 }
@@ -47,6 +48,15 @@ export class DatabaseStorage implements IStorage {
       .values([insertTransformation])
       .returning();
     return transformation;
+  }
+
+  async updatePetTransformation(id: string, updates: Partial<PetTransformation>): Promise<PetTransformation | undefined> {
+    const [transformation] = await db
+      .update(petTransformations)
+      .set(updates)
+      .where(eq(petTransformations.id, id))
+      .returning();
+    return transformation || undefined;
   }
 
   async updatePetTransformationStats(id: string, stats: { likes: number; shares: number; downloads: number }): Promise<void> {
