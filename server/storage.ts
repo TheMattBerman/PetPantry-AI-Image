@@ -1,5 +1,7 @@
-import { type User, type InsertUser, type PetTransformation, type InsertPetTransformation } from "@shared/schema";
+import { type User, type InsertUser, type PetTransformation, type InsertPetTransformation, users, petTransformations } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -14,62 +16,49 @@ export interface IStorage {
   getUserTransformations(userId: string): Promise<PetTransformation[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private petTransformations: Map<string, PetTransformation>;
-
-  constructor() {
-    this.users = new Map();
-    this.petTransformations = new Map();
-  }
-
+// Referenced from javascript_database integration - using DatabaseStorage instead of MemStorage
+export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = {
-      ...insertUser,
-      id,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values([insertUser])
+      .returning();
     return user;
   }
 
   async getPetTransformation(id: string): Promise<PetTransformation | undefined> {
-    return this.petTransformations.get(id);
+    const [transformation] = await db.select().from(petTransformations).where(eq(petTransformations.id, id));
+    return transformation || undefined;
   }
 
   async createPetTransformation(insertTransformation: InsertPetTransformation): Promise<PetTransformation> {
-    const id = randomUUID();
-    const transformation: PetTransformation = {
-      ...insertTransformation,
-      id,
-      stats: { likes: 0, shares: 0, downloads: 0 },
-      transformedImageUrl: null,
-      createdAt: new Date(),
-    };
-    this.petTransformations.set(id, transformation);
+    const [transformation] = await db
+      .insert(petTransformations)
+      .values([insertTransformation])
+      .returning();
     return transformation;
   }
 
   async updatePetTransformationStats(id: string, stats: { likes: number; shares: number; downloads: number }): Promise<void> {
-    const transformation = this.petTransformations.get(id);
-    if (transformation) {
-      transformation.stats = stats;
-      this.petTransformations.set(id, transformation);
-    }
+    await db
+      .update(petTransformations)
+      .set({ stats })
+      .where(eq(petTransformations.id, id));
   }
 
   async getUserTransformations(userId: string): Promise<PetTransformation[]> {
-    return Array.from(this.petTransformations.values()).filter(t => t.userId === userId);
+    return await db.select().from(petTransformations).where(eq(petTransformations.userId, userId));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

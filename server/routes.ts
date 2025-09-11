@@ -125,9 +125,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update transformation stats (increment downloads)
       const transformation = await storage.getPetTransformation(validatedData.transformationId);
       if (transformation) {
+        const currentStats = transformation.stats || { likes: 0, shares: 0, downloads: 0 };
         await storage.updatePetTransformationStats(validatedData.transformationId, {
-          ...transformation.stats,
-          downloads: transformation.stats.downloads + 1,
+          ...currentStats,
+          downloads: currentStats.downloads + 1,
         });
       }
 
@@ -170,9 +171,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Transformation not found" });
       }
 
+      const currentStats = transformation.stats || { likes: 0, shares: 0, downloads: 0 };
       await storage.updatePetTransformationStats(req.params.id, {
-        ...transformation.stats,
-        shares: transformation.stats.shares + 1,
+        ...currentStats,
+        shares: currentStats.shares + 1,
       });
 
       res.json({ success: true, message: "Share recorded" });
