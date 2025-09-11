@@ -45,7 +45,7 @@ export class DatabaseStorage implements IStorage {
   async createPetTransformation(insertTransformation: InsertPetTransformation): Promise<PetTransformation> {
     const [transformation] = await db
       .insert(petTransformations)
-      .values([insertTransformation])
+      .values(insertTransformation)
       .returning();
     return transformation;
   }
