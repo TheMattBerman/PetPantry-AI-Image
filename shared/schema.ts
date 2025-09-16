@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, jsonb, boolean, real, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -42,3 +42,40 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertPetTransformation = z.infer<typeof insertPetTransformationSchema>;
 export type PetTransformation = typeof petTransformations.$inferSelect;
+
+// Backend prompt optimization system
+export const promptTemplates = pgTable("prompt_templates", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(), // 'superhero' or 'baseball'
+  basePrompt: text("base_prompt").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const promptVariants = pgTable("prompt_variants", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").references(() => promptTemplates.id).notNull(),
+  prompt: text("prompt").notNull(),
+  successRate: real("success_rate").default(0), // Track performance
+  timesUsed: integer("times_used").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const promptTemplateSchema = createInsertSchema(promptTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const promptVariantSchema = createInsertSchema(promptVariants).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type PromptTemplateInsert = z.infer<typeof promptTemplateSchema>;
+export type PromptTemplateSelect = typeof promptTemplates.$inferSelect;
+export type PromptVariantInsert = z.infer<typeof promptVariantSchema>;
+export type PromptVariantSelect = typeof promptVariants.$inferSelect;

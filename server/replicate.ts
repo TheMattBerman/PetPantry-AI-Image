@@ -42,17 +42,37 @@ export interface TransformationResult {
  */
 export async function createBaseballCard(input: BaseballCardInput): Promise<TransformationResult> {
   try {
-    // Using Flux model for image generation with baseball card prompt
-    const prompt = `Create a professional baseball card featuring a ${input.petName} pet. 
+    // Import storage here to avoid circular dependency
+    const { storage } = await import("./storage");
+    
+    // Get the active baseball prompt template from backend
+    const template = await storage.getActivePromptTemplate('baseball');
+    let basePrompt = template?.basePrompt || `Create a professional baseball card featuring a ${input.petName} pet. 
     Style: Vintage baseball card design with clean borders, team colors, and stats section.
     Pet name: "${input.petName}"
     ${input.team ? `Team: "${input.team}"` : ''}
     ${input.position ? `Position: "${input.position}"` : 'Position: "Good Boy/Girl"'}
     Include realistic pet stats like "Fetch Success Rate", "Treats Consumed", "Naps Per Day".
     Professional sports photography style, high quality, detailed.`;
+    
+    // Get the best performing variant if available
+    if (template) {
+      const bestVariant = await storage.getBestPromptVariant(template.id);
+      if (bestVariant && bestVariant.id) {
+        basePrompt = bestVariant.prompt;
+        // Update usage stats
+        await storage.updatePromptVariantStats(bestVariant.id, bestVariant.successRate || 0);
+      }
+    }
+    
+    // Replace placeholders with actual values
+    const prompt = basePrompt
+      .replace('{petName}', input.petName)
+      .replace('{team}', input.team || '')
+      .replace('{position}', input.position || 'Good Boy/Girl');
 
     const output = await replicate.run(
-      "google/nano-banana",
+      "black-forest-labs/flux-schnell",
       {
         input: {
           prompt: prompt,
@@ -94,19 +114,40 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
  */
 export async function createSuperheroImage(input: SuperheroInput): Promise<TransformationResult> {
   try {
+    // Import storage here to avoid circular dependency
+    const { storage } = await import("./storage");
+    
     const heroName = input.heroName || `Super ${input.petName}`;
     const powers = input.powers?.join(", ") || "super speed, incredible loyalty, treat detection";
     
-    const prompt = `Create a superhero-style image featuring a ${input.petName} pet as "${heroName}".
+    // Get the active superhero prompt template from backend
+    const template = await storage.getActivePromptTemplate('superhero');
+    let basePrompt = template?.basePrompt || `Create a superhero-style image featuring a {petName} pet as "{heroName}".
     Style: Comic book superhero aesthetic with cape, mask, and heroic pose.
-    Pet name: "${input.petName}"
-    Hero name: "${heroName}"
-    Powers: ${powers}
+    Pet name: "{petName}"
+    Hero name: "{heroName}"
+    Powers: {powers}
     Dynamic superhero pose, vibrant colors, cape flowing, heroic lighting.
     Professional comic book art style, high quality, detailed.`;
+    
+    // Get the best performing variant if available
+    if (template) {
+      const bestVariant = await storage.getBestPromptVariant(template.id);
+      if (bestVariant && bestVariant.id) {
+        basePrompt = bestVariant.prompt;
+        // Update usage stats
+        await storage.updatePromptVariantStats(bestVariant.id, bestVariant.successRate || 0);
+      }
+    }
+    
+    // Replace placeholders with actual values
+    const prompt = basePrompt
+      .replace('{petName}', input.petName)
+      .replace('{heroName}', heroName)
+      .replace('{powers}', powers);
 
     const output = await replicate.run(
-      "google/nano-banana",
+      "black-forest-labs/flux-schnell",
       {
         input: {
           prompt: prompt,
@@ -147,7 +188,7 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
     const enhancedPrompt = `${input.prompt}. Pet name: "${input.petName}". High quality, detailed, professional.`;
 
     const output = await replicate.run(
-      "google/nano-banana",
+      "black-forest-labs/flux-schnell",
       {
         input: {
           prompt: enhancedPrompt,

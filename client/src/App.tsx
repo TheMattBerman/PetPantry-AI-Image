@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import PromptTesting from "@/pages/prompt-testing";
+import AdminPromptOptimization from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -12,6 +13,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/prompt-testing" component={PromptTesting} />
+      <Route path="/admin" component={AdminPromptOptimization} />
       <Route component={NotFound} />
     </Switch>
   );

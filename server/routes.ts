@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertPetTransformationSchema } from "@shared/schema";
+import { insertUserSchema, insertPetTransformationSchema, promptTemplateSchema, promptVariantSchema } from "@shared/schema";
 import { createBaseballCard, createSuperheroImage, generateBaseballStats, createCustomPromptImage } from "./replicate";
 import { enhancePrompt, generatePromptSuggestions, generatePetDescription } from "./openai";
 
@@ -402,6 +402,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
+    }
+  });
+
+  // Simple admin authentication middleware
+  const adminAuth = (req: any, res: any, next: any) => {
+    const adminToken = process.env.ADMIN_TOKEN || 'admin123'; // Change this in production
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== adminToken) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    next();
+  };
+
+  // Backend prompt optimization routes (protected)
+  app.get("/api/admin/prompt-templates", adminAuth, async (req, res) => {
+    try {
+      const templates = await storage.getAllPromptTemplates();
+      res.json({ success: true, templates });
+    } catch (error) {
+      console.error("Failed to get prompt templates:", error);
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.post("/api/admin/prompt-templates", adminAuth, async (req, res) => {
+    try {
+      const templateData = promptTemplateSchema.parse(req.body);
+      const template = await storage.createPromptTemplate(templateData);
+      res.json({ success: true, template });
+    } catch (error) {
+      console.error("Failed to create prompt template:", error);
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.put("/api/admin/prompt-templates/:id", adminAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const template = await storage.updatePromptTemplate(id, updates);
+      if (!template) {
+        return res.status(404).json({ success: false, error: "Template not found" });
+      }
+      res.json({ success: true, template });
+    } catch (error) {
+      console.error("Failed to update prompt template:", error);
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/admin/prompt-variants/:templateId", adminAuth, async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.templateId);
+      const variants = await storage.getPromptVariants(templateId);
+      res.json({ success: true, variants });
+    } catch (error) {
+      console.error("Failed to get prompt variants:", error);
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.post("/api/admin/prompt-variants", adminAuth, async (req, res) => {
+    try {
+      const variantData = promptVariantSchema.parse(req.body);
+      const variant = await storage.createPromptVariant(variantData);
+      res.json({ success: true, variant });
+    } catch (error) {
+      console.error("Failed to create prompt variant:", error);
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
