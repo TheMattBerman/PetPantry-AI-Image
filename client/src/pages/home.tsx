@@ -49,12 +49,6 @@ export default function Home() {
               <h1 className="text-xl font-bold text-gray-800">The Pet Pantry</h1>
             </div>
             <div className="flex items-center space-x-3">
-              <Link href="/prompt-testing">
-                <Button variant="outline" size="sm" data-testid="link-prompt-testing">
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  Prompt Testing
-                </Button>
-              </Link>
               <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                 FREE TOOL
               </span>
@@ -101,6 +95,8 @@ export default function Home() {
         {appState.currentStep === 'processing' && (
           <ProcessingSection
             selectedTheme={appState.selectedTheme!}
+            uploadedFile={appState.uploadedFile}
+            petData={appState.petData}
             onComplete={(result) => updateState({ transformationResult: result, currentStep: 'result' })}
           />
         )}
