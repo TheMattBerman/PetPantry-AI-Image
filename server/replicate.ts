@@ -96,14 +96,12 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     console.log("Is array:", Array.isArray(finalOutput));
 
     // nano-banana returns a direct URL string, not an array
-    if (typeof finalOutput === 'string') {
-      if (finalOutput.includes('http')) {
-        console.log("Successfully returning image URL:", finalOutput);
-        return {
-          success: true,
-          imageUrl: finalOutput,
-        };
-      }
+    if (typeof finalOutput === 'string' && finalOutput.includes('http')) {
+      console.log("Successfully returning image URL:", finalOutput);
+      return {
+        success: true,
+        imageUrl: finalOutput,
+      };
     } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
       
@@ -204,14 +202,12 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     console.log("Is array:", Array.isArray(finalOutput));
 
     // nano-banana returns a direct URL string, not an array
-    if (typeof finalOutput === 'string') {
-      if (finalOutput.includes('http')) {
-        console.log("Successfully returning image URL:", finalOutput);
-        return {
-          success: true,
-          imageUrl: finalOutput,
-        };
-      }
+    if (typeof finalOutput === 'string' && finalOutput.includes('http')) {
+      console.log("Successfully returning image URL:", finalOutput);
+      return {
+        success: true,
+        imageUrl: finalOutput,
+      };
     } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
       
@@ -282,14 +278,12 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
     console.log("Is array:", Array.isArray(finalOutput));
 
     // nano-banana returns a direct URL string, not an array
-    if (typeof finalOutput === 'string') {
-      if (finalOutput.includes('http')) {
-        console.log("Successfully returning image URL:", finalOutput);
-        return {
-          success: true,
-          imageUrl: finalOutput,
-        };
-      }
+    if (typeof finalOutput === 'string' && finalOutput.includes('http')) {
+      console.log("Successfully returning image URL:", finalOutput);
+      return {
+        success: true,
+        imageUrl: finalOutput,
+      };
     } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
       

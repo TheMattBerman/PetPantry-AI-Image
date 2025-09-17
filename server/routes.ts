@@ -103,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create transformation record first
       const transformation = await storage.createPetTransformation({
         ...validatedData,
-        originalImageUrl: req.body.originalImageUrl || "placeholder-url",
+        originalImageUrl: req.body.originalImageUrl || "https://images.unsplash.com/photo-1551717743-49959800b1f6?auto=format&fit=crop&w=500&h=500",
       });
 
       // Generate AI transformation based on theme
