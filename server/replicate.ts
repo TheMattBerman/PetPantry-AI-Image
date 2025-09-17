@@ -117,9 +117,14 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
       finalOutput = await (output as Promise<any>);
     }
 
+    console.log("=== BASEBALL CARD TRANSFORMATION DEBUG ===");
+    console.log("Input prompt:", prompt);
+    console.log("Resolved image type:", typeof resolvedImage);
+    console.log("Resolved image is Blob:", resolvedImage instanceof Blob);
     console.log("Baseball card Replicate output:", JSON.stringify(finalOutput, null, 2));
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
+    console.log("=== END DEBUG ===");
 
     // nano-banana returns a direct URL string, not an array
     if (typeof finalOutput === 'string' && finalOutput && finalOutput.includes('http')) {
@@ -160,7 +165,11 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
       error: "No image generated",
     };
   } catch (error) {
-    console.error("Baseball card generation error:", error);
+    console.error("=== BASEBALL CARD ERROR ===");
+    console.error("Full error object:", error);
+    console.error("Error message:", error instanceof Error ? error.message : "Unknown error");
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+    console.error("=== END ERROR ===");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -226,9 +235,14 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
       finalOutput = await (output as Promise<any>);
     }
 
+    console.log("=== SUPERHERO TRANSFORMATION DEBUG ===");
+    console.log("Input prompt:", prompt);
+    console.log("Resolved image type:", typeof resolvedImage);
+    console.log("Resolved image is Blob:", resolvedImage instanceof Blob);
     console.log("Superhero Replicate output:", JSON.stringify(finalOutput, null, 2));
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
+    console.log("=== END DEBUG ===");
 
     // nano-banana returns a direct URL string, not an array
     if (typeof finalOutput === 'string' && finalOutput && finalOutput.includes('http')) {
@@ -269,7 +283,11 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
       error: "No image generated",
     };
   } catch (error) {
-    console.error("Superhero image generation error:", error);
+    console.error("=== SUPERHERO ERROR ===");
+    console.error("Full error object:", error);
+    console.error("Error message:", error instanceof Error ? error.message : "Unknown error");
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+    console.error("=== END ERROR ===");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
