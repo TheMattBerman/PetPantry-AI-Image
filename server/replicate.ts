@@ -103,18 +103,19 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     const resolvedImage = await resolveImageInput(input.petImageUrl);
 
     console.log("=== BEFORE NANO-BANANA CALL ===");
-    console.log("Model: google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5");
+    console.log("Model: google/nano-banana");
     console.log("Prompt:", prompt);
     console.log("Image type:", typeof resolvedImage);
     console.log("Image URL:", resolvedImage);
     console.log("=== CALLING REPLICATE ===");
     
     const output = await replicate.run(
-      "google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5",
+      "google/nano-banana",
       {
         input: {
-          image: resolvedImage, // Use standard 'image' parameter
+          image_input: [resolvedImage], // nano-banana expects image_input as array
           prompt: prompt,
+          output_format: "jpg",
         }
       }
     );
@@ -266,18 +267,19 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     const resolvedImage = await resolveImageInput(input.petImageUrl);
 
     console.log("=== BEFORE NANO-BANANA CALL ===");
-    console.log("Model: google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5");
+    console.log("Model: google/nano-banana");
     console.log("Prompt:", prompt);
     console.log("Image type:", typeof resolvedImage);
     console.log("Image URL:", resolvedImage);
     console.log("=== CALLING REPLICATE ===");
     
     const output = await replicate.run(
-      "google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5",
+      "google/nano-banana",
       {
         input: {
-          image: resolvedImage, // Use standard 'image' parameter
+          image_input: [resolvedImage], // nano-banana expects image_input as array
           prompt: prompt,
+          output_format: "jpg",
         }
       }
     );
