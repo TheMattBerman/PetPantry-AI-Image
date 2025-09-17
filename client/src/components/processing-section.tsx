@@ -41,25 +41,24 @@ export default function ProcessingSection({ selectedTheme, onComplete, uploadedF
         throw new Error('Missing required data for image generation');
       }
 
-      // First, upload the image to get a URL
-      const formData = new FormData();
-      formData.append('petPhoto', uploadedFile);
+      // Convert the uploaded file to base64 data URL directly
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(uploadedFile);
+      });
 
-      const uploadResponse = await apiRequest('POST', '/api/upload', formData);
-      const uploadResult = await uploadResponse.json();
+      console.log('Generated base64 image for nano-banana:', base64Image.substring(0, 100) + '...');
 
-      if (!uploadResult.success) {
-        throw new Error(uploadResult.message || 'Image upload failed');
-      }
-
-      // Now use the uploaded image URL for transformation
+      // Now use the base64 image for transformation
       const transformationData = {
         petName: petData.petName || 'Pet',
         theme: selectedTheme,
         petBreed: petData.petBreed || '',
         traits: petData.traits || [],
         customMessage: petData.customMessage || '',
-        originalImageUrl: uploadResult.fileUrl
+        originalImageUrl: base64Image
       };
 
       const response = await apiRequest('POST', '/api/transformations', transformationData);
@@ -79,36 +78,13 @@ export default function ProcessingSection({ selectedTheme, onComplete, uploadedF
         onComplete(result);
       } else {
         console.error('Image generation failed:', data.error || data.message);
-        // Fallback to mock result for now
-        const mockResult: TransformationResult = {
-          id: `transformation_${Date.now()}`,
-          transformedImageUrl: selectedTheme === 'baseball' 
-            ? "https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=600"
-            : "https://images.unsplash.com/photo-1571566882372-1598d88abd90?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=600",
-          stats: {
-            likes: Math.floor(Math.random() * 500) + 100,
-            shares: Math.floor(Math.random() * 200) + 50,
-            downloads: Math.floor(Math.random() * 300) + 100,
-          },
-        };
-        onComplete(mockResult);
+        throw new Error('Image generation failed: ' + (data.error || data.message));
       }
     },
     onError: (error) => {
       console.error('Image generation error:', error);
-      // Fallback to mock result for now
-      const mockResult: TransformationResult = {
-        id: `transformation_${Date.now()}`,
-        transformedImageUrl: selectedTheme === 'baseball' 
-          ? "https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=600"
-          : "https://images.unsplash.com/photo-1571566882372-1598d88abd90?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=600",
-        stats: {
-          likes: Math.floor(Math.random() * 500) + 100,
-          shares: Math.floor(Math.random() * 200) + 50,
-          downloads: Math.floor(Math.random() * 300) + 100,
-        },
-      };
-      onComplete(mockResult);
+      // Don't fall back to stock photos - show the actual error
+      throw error;
     },
   });
 
