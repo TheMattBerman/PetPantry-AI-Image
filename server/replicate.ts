@@ -86,16 +86,41 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
         }
       }
     );
+    
+    // Wait for the prediction to complete if it's a stream/promise
+    let finalOutput = output;
+    if (output && typeof output === 'object' && 'then' in output) {
+      finalOutput = await (output as Promise<any>);
+    }
 
-    console.log("Baseball card Replicate output:", JSON.stringify(output, null, 2));
-    console.log("Output type:", typeof output);
-    console.log("Is array:", Array.isArray(output));
+    console.log("Baseball card Replicate output:", JSON.stringify(finalOutput, null, 2));
+    console.log("Output type:", typeof finalOutput);
+    console.log("Is array:", Array.isArray(finalOutput));
 
-    if (Array.isArray(output) && output.length > 0) {
-      console.log("Successfully returning image URL:", output[0]);
+    if (Array.isArray(finalOutput) && finalOutput.length > 0) {
+      let imageUrl = finalOutput[0];
+      
+      // Handle ReadableStream or other non-string responses
+      if (typeof imageUrl !== 'string') {
+        console.log("Non-string response detected, type:", typeof imageUrl);
+        console.log("Response value:", imageUrl);
+        
+        // If it's a ReadableStream or URL object, try to extract the actual URL
+        if (imageUrl && typeof imageUrl === 'object' && imageUrl.toString) {
+          imageUrl = imageUrl.toString();
+        } else {
+          console.error("Unable to extract URL from response:", imageUrl);
+          return {
+            success: false,
+            error: "Invalid image URL response from AI service",
+          };
+        }
+      }
+      
+      console.log("Successfully returning image URL:", imageUrl);
       return {
         success: true,
-        imageUrl: output[0],
+        imageUrl: imageUrl,
       };
     }
 
@@ -162,11 +187,41 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
         }
       }
     );
+    
+    // Wait for the prediction to complete if it's a stream/promise
+    let finalOutput = output;
+    if (output && typeof output === 'object' && 'then' in output) {
+      finalOutput = await (output as Promise<any>);
+    }
 
-    if (Array.isArray(output) && output.length > 0) {
+    console.log("Superhero Replicate output:", JSON.stringify(finalOutput, null, 2));
+    console.log("Output type:", typeof finalOutput);
+    console.log("Is array:", Array.isArray(finalOutput));
+
+    if (Array.isArray(finalOutput) && finalOutput.length > 0) {
+      let imageUrl = finalOutput[0];
+      
+      // Handle ReadableStream or other non-string responses
+      if (typeof imageUrl !== 'string') {
+        console.log("Non-string response detected, type:", typeof imageUrl);
+        console.log("Response value:", imageUrl);
+        
+        // If it's a ReadableStream or URL object, try to extract the actual URL
+        if (imageUrl && typeof imageUrl === 'object' && imageUrl.toString) {
+          imageUrl = imageUrl.toString();
+        } else {
+          console.error("Unable to extract URL from response:", imageUrl);
+          return {
+            success: false,
+            error: "Invalid image URL response from AI service",
+          };
+        }
+      }
+      
+      console.log("Successfully returning image URL:", imageUrl);
       return {
         success: true,
-        imageUrl: output[0],
+        imageUrl: imageUrl,
       };
     }
 
@@ -203,16 +258,41 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
         }
       }
     );
+    
+    // Wait for the prediction to complete if it's a stream/promise
+    let finalOutput = output;
+    if (output && typeof output === 'object' && 'then' in output) {
+      finalOutput = await (output as Promise<any>);
+    }
 
-    console.log("Custom prompt Replicate output:", JSON.stringify(output, null, 2));
-    console.log("Output type:", typeof output);
-    console.log("Is array:", Array.isArray(output));
+    console.log("Custom prompt Replicate output:", JSON.stringify(finalOutput, null, 2));
+    console.log("Output type:", typeof finalOutput);
+    console.log("Is array:", Array.isArray(finalOutput));
 
-    if (Array.isArray(output) && output.length > 0) {
-      console.log("Successfully returning custom prompt image URL:", output[0]);
+    if (Array.isArray(finalOutput) && finalOutput.length > 0) {
+      let imageUrl = finalOutput[0];
+      
+      // Handle ReadableStream or other non-string responses
+      if (typeof imageUrl !== 'string') {
+        console.log("Non-string response detected, type:", typeof imageUrl);
+        console.log("Response value:", imageUrl);
+        
+        // If it's a ReadableStream or URL object, try to extract the actual URL
+        if (imageUrl && typeof imageUrl === 'object' && imageUrl.toString) {
+          imageUrl = imageUrl.toString();
+        } else {
+          console.error("Unable to extract URL from response:", imageUrl);
+          return {
+            success: false,
+            error: "Invalid image URL response from AI service",
+          };
+        }
+      }
+      
+      console.log("Successfully returning custom prompt image URL:", imageUrl);
       return {
         success: true,
-        imageUrl: output[0],
+        imageUrl: imageUrl,
       };
     }
 
