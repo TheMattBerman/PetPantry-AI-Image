@@ -132,6 +132,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     console.log("Output constructor:", finalOutput?.constructor?.name);
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
+    console.log("Output keys:", finalOutput && typeof finalOutput === 'object' ? Object.keys(finalOutput) : 'N/A');
     console.log("=== END DEBUG ===");
 
     // Handle Blob/file outputs by uploading them to get a URL
@@ -204,6 +205,45 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
           success: true,
           imageUrl: finalOutput.images[0],
         };
+      }
+      
+      // Check if it's a FileOutput with url() method
+      console.log("Checking FileOutput object properties...");
+      console.log("Available methods/properties:", Object.getOwnPropertyNames(finalOutput));
+      console.log("Prototype methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(finalOutput)));
+      
+      // Check if FileOutput has a url property or method
+      if (finalOutput.url) {
+        if (typeof finalOutput.url === 'function') {
+          const imageUrl = finalOutput.url();
+          console.log("Called URL function, got:", imageUrl);
+          // Convert URL object to string if needed
+          const urlString = typeof imageUrl === 'string' ? imageUrl : imageUrl.toString();
+          return {
+            success: true,
+            imageUrl: urlString,
+          };
+        } else {
+          console.log("Found URL property:", finalOutput.url);
+          return {
+            success: true,
+            imageUrl: finalOutput.url,
+          };
+        }
+      }
+      
+      // If no URL method found, try uploading the object as a stream/binary
+      console.log("Attempting to upload stream/binary output to Replicate Files...");
+      try {
+        const uploadedFile = await replicate.files.create(finalOutput as any);
+        console.log("Successfully uploaded stream output:", uploadedFile.id);
+        return {
+          success: true,
+          imageUrl: uploadedFile.urls.get,
+        };
+      } catch (uploadError) {
+        console.log("Failed to upload stream output:", uploadError);
+        // Continue to error
       }
     }
 
@@ -294,9 +334,10 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     console.log("Input prompt:", prompt);
     console.log("Resolved image type:", typeof resolvedImage);
     console.log("Resolved image URL:", resolvedImage);
-    console.log("Superhero Replicate output:", JSON.stringify(finalOutput, null, 2));
+    console.log("Output constructor:", finalOutput?.constructor?.name);
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
+    console.log("Output keys:", finalOutput && typeof finalOutput === 'object' ? Object.keys(finalOutput) : 'N/A');
     console.log("=== END DEBUG ===");
 
     // nano-banana returns a direct URL string, not an array
@@ -331,6 +372,55 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
         success: true,
         imageUrl: imageUrl,
       };
+    }
+
+    // Handle stream/binary outputs - first check if it's a FileOutput with direct URL access
+    if (finalOutput && typeof finalOutput === 'object' && !Array.isArray(finalOutput)) {
+      console.log("Checking FileOutput object properties...");
+      console.log("Available methods/properties:", Object.getOwnPropertyNames(finalOutput));
+      console.log("Prototype methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(finalOutput)));
+      
+      // Check if FileOutput has a url property or method
+      if (finalOutput.url) {
+        if (typeof finalOutput.url === 'function') {
+          const imageUrl = finalOutput.url();
+          console.log("Called URL function, got:", imageUrl);
+          // Convert URL object to string if needed
+          const urlString = typeof imageUrl === 'string' ? imageUrl : imageUrl.toString();
+          return {
+            success: true,
+            imageUrl: urlString,
+          };
+        } else {
+          console.log("Found URL property:", finalOutput.url);
+          return {
+            success: true,
+            imageUrl: finalOutput.url,
+          };
+        }
+      }
+      
+      // Check if FileOutput has a file method or property that gives us a URL
+      if (finalOutput.urls && finalOutput.urls.get) {
+        console.log("Found URLs object:", finalOutput.urls.get);
+        return {
+          success: true,
+          imageUrl: finalOutput.urls.get,
+        };
+      }
+      
+      console.log("Attempting to upload stream/binary output to Replicate Files...");
+      try {
+        const uploadedFile = await replicate.files.create(finalOutput as any);
+        console.log("Successfully uploaded stream output:", uploadedFile.id);
+        return {
+          success: true,
+          imageUrl: uploadedFile.urls.get,
+        };
+      } catch (uploadError) {
+        console.log("Failed to upload stream output:", uploadError);
+        // Continue to other checks
+      }
     }
 
     return {
