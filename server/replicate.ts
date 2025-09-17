@@ -75,14 +75,12 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
       .replaceAll('{position}', input.position || 'Good Boy/Girl');
 
     const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
+      "google/nano-banana",
       {
         input: {
           prompt: prompt,
-          num_outputs: 1,
-          aspect_ratio: "2:3", // Baseball card ratio
+          image_input: [input.petImageUrl], // The uploaded pet image to transform
           output_format: "png",
-          output_quality: 90,
         }
       }
     );
@@ -97,7 +95,16 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
 
-    if (Array.isArray(finalOutput) && finalOutput.length > 0) {
+    // nano-banana returns a direct URL string, not an array
+    if (typeof finalOutput === 'string') {
+      if (finalOutput.includes('http')) {
+        console.log("Successfully returning image URL:", finalOutput);
+        return {
+          success: true,
+          imageUrl: finalOutput,
+        };
+      }
+    } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
       
       // Handle ReadableStream or other non-string responses
@@ -176,14 +183,12 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
       .replaceAll('{powers}', powers);
 
     const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
+      "google/nano-banana",
       {
         input: {
           prompt: prompt,
-          num_outputs: 1,
-          aspect_ratio: "3:4", // Superhero poster ratio
-          output_format: "png", 
-          output_quality: 90,
+          image_input: [input.petImageUrl], // The uploaded pet image to transform
+          output_format: "png",
         }
       }
     );
@@ -198,7 +203,16 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
 
-    if (Array.isArray(finalOutput) && finalOutput.length > 0) {
+    // nano-banana returns a direct URL string, not an array
+    if (typeof finalOutput === 'string') {
+      if (finalOutput.includes('http')) {
+        console.log("Successfully returning image URL:", finalOutput);
+        return {
+          success: true,
+          imageUrl: finalOutput,
+        };
+      }
+    } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
       
       // Handle ReadableStream or other non-string responses
@@ -247,14 +261,12 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
     const enhancedPrompt = `${input.prompt}. Pet name: "${input.petName}". High quality, detailed, professional.`;
 
     const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
+      "google/nano-banana",
       {
         input: {
           prompt: enhancedPrompt,
-          num_outputs: 1,
-          aspect_ratio: input.aspectRatio,
+          image_input: [], // No input image for custom prompts
           output_format: input.outputFormat,
-          output_quality: 90,
         }
       }
     );
@@ -269,7 +281,16 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
 
-    if (Array.isArray(finalOutput) && finalOutput.length > 0) {
+    // nano-banana returns a direct URL string, not an array
+    if (typeof finalOutput === 'string') {
+      if (finalOutput.includes('http')) {
+        console.log("Successfully returning image URL:", finalOutput);
+        return {
+          success: true,
+          imageUrl: finalOutput,
+        };
+      }
+    } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
       
       // Handle ReadableStream or other non-string responses

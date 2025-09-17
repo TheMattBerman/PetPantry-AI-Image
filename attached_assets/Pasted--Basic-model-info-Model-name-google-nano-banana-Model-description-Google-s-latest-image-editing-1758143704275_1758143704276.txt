@@ -1,0 +1,98 @@
+## Basic model info
+
+Model name: google/nano-banana
+Model description: Google's latest image editing model in Gemini 2.5
+
+
+## Model inputs
+
+- prompt (required): A text description of the image you want to generate (string)
+- image_input (optional): Input images to transform or use as reference (supports multiple images) (array)
+- output_format (optional): Format of the output image (string)
+
+
+## Model output schema
+
+{
+  "type": "string",
+  "title": "Output",
+  "format": "uri"
+}
+
+If the input or output schema includes a format of URI, it is referring to a file.
+
+
+## Example inputs and outputs
+
+Use these example outputs to better understand the types of inputs the model accepts, and the types of outputs the model returns:
+
+### Example (https://replicate.com/p/1bwy6kt8r9rm80crx16t6161tm)
+
+#### Input
+
+```json
+{
+  "prompt": "Make the sheets in the style of the logo. Make the scene natural. ",
+  "image_input": [
+    "https://replicate.delivery/pbxt/NbYIclp4A5HWLsJ8lF5KgiYSNaLBBT1jUcYcHYQmN1uy5OnN/tmpcqc07f_q.png",
+    "https://replicate.delivery/pbxt/NbYId45yH8s04sptdtPcGqFIhV7zS5GTcdS3TtNliyTAoYPO/Screenshot%202025-08-26%20at%205.30.12%E2%80%AFPM.png"
+  ],
+  "output_format": "jpg"
+}
+```
+
+#### Output
+
+```json
+"https://replicate.delivery/xezq/eQ2MQYrD6XzheEgCe7OcHlUJAXYc8HaMJmGPmbTOCClZS7dqA/tmp4vqrduzh.jpg"
+```
+
+
+### Example (https://replicate.com/p/zbw2b1aw05rma0cs29aa12r310)
+
+#### Input
+
+```json
+{
+  "prompt": "have the people smile and take a selfie from a phone",
+  "image_input": [
+    "https://replicate.delivery/pbxt/NeRx7gSc6ORMdhCjOzV0Of9VAEDNjQ56RJWVXFTjT53AK5L1/billie.jpeg",
+    "https://replicate.delivery/pbxt/NeRx7dSeZKRgWr0V6ilLhZsk8HSZgV3Z9VsauD7FSYrrvuXD/michael.jpeg"
+  ],
+  "output_format": "jpg"
+}
+```
+
+#### Output
+
+```json
+"https://replicate.delivery/xezq/mbE0pfJqUtTfu0vp7gjG93nkNYNsy78a1onho9oos56fkTjqA/tmpgxxuv701.jpg"
+```
+
+
+## Model readme
+
+> Gemini 2.5 Flash Image is Google's state-of-the-art image generation and editing model. It is a new variant of the Gemini 2.5 family, specifically designed for fast, conversational, and multi-turn creative workflows. This model is made available to developers through the Gemini API, Google AI Studio, and Vertex AI.
+> 
+> # Key Features
+> Native Image Generation and Editing: Gemini 2.5 Flash Image is a multimodal model that natively understands and generates images. This allows for a seamless, unified workflow for creating and editing visuals.
+> 
+> Multi-image Fusion: This powerful feature allows you to combine multiple input images into a single, cohesive, new visual. For example, you can integrate a product into a new scene or restyle a room by merging images of different furniture and decor.
+> 
+> Character and Style Consistency: A significant advancement is the ability to maintain a consistent character, object, or style across multiple prompts and images. This is essential for storytelling, branding, and generating a series of cohesive assets without needing time-consuming fine-tuning.
+> 
+> Conversational Editing: The model enables precise, targeted edits using natural language. You can make specific changes like blurring a background, removing an object, altering a subject's pose, or colorizing a black-and-white photo by simply describing the desired outcome.
+> 
+> Visual Reasoning: Gemini 2.5 Flash Image benefits from the Gemini model's deep world knowledge. It can go beyond simple photorealism to perform complex tasks that require genuine understanding, such as interpreting hand-drawn diagrams, assisting with educational queries, and following multi-step instructions.
+> 
+> SynthID Watermarking: To promote responsible AI and transparency, all images created or edited with Gemini 2.5 Flash Image are embedded with an invisible digital watermark from SynthID. This watermark helps identify the content as AI-generated or edited.
+> 
+> # How to Use
+> Developers can interact with Gemini 2.5 Flash Image through various platforms:
+> 
+> Gemini API: Access the model programmatically for integration into your applications. You can provide image data inline or by using the more efficient File API for larger files and repeated use.
+> 
+> Google AI Studio: A web-based environment that offers a user-friendly interface to quickly test, experiment with, and build applications. You can use built-in templates to prototype AI-powered apps and easily remix them.
+> 
+> Vertex AI: For enterprise-level use cases, the model is available on Google Cloud's machine learning platform, which provides robust security features and options for fine-tuning and deployment at scale.
+
