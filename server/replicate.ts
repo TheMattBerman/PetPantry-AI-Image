@@ -12,6 +12,7 @@ export const replicate = new Replicate({
 export interface BaseballCardInput {
   petImageUrl: string;
   petName: string;
+  petBreed?: string;
   team?: string;
   position?: string;
   stats?: Record<string, number>;
@@ -20,6 +21,7 @@ export interface BaseballCardInput {
 export interface SuperheroInput {
   petImageUrl: string;
   petName: string;
+  petBreed?: string;
   heroName?: string;
   powers?: string[];
 }
@@ -65,11 +67,12 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
       }
     }
     
-    // Replace placeholders with actual values
+    // Replace placeholders with actual values - use replaceAll for multiple occurrences
     const prompt = basePrompt
-      .replace('{petName}', input.petName)
-      .replace('{team}', input.team || '')
-      .replace('{position}', input.position || 'Good Boy/Girl');
+      .replaceAll('{petName}', input.petName)
+      .replaceAll('{petBreed}', convertBreedToReadable(input.petBreed || 'pet'))
+      .replaceAll('{team}', input.team || '')
+      .replaceAll('{position}', input.position || 'Good Boy/Girl');
 
     const output = await replicate.run(
       "black-forest-labs/flux-schnell",
@@ -140,11 +143,12 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
       }
     }
     
-    // Replace placeholders with actual values
+    // Replace placeholders with actual values - use replaceAll for multiple occurrences
     const prompt = basePrompt
-      .replace('{petName}', input.petName)
-      .replace('{heroName}', heroName)
-      .replace('{powers}', powers);
+      .replaceAll('{petName}', input.petName)
+      .replaceAll('{petBreed}', convertBreedToReadable(input.petBreed || 'pet'))
+      .replaceAll('{heroName}', heroName)
+      .replaceAll('{powers}', powers);
 
     const output = await replicate.run(
       "black-forest-labs/flux-schnell",
@@ -228,6 +232,24 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
+}
+
+/**
+ * Convert breed form values to readable names
+ */
+function convertBreedToReadable(breed: string): string {
+  const breedMap: Record<string, string> = {
+    'golden-retriever': 'Golden Retriever',
+    'labrador': 'Labrador',
+    'german-shepherd': 'German Shepherd',
+    'bulldog': 'Bulldog',
+    'poodle': 'Poodle',
+    'cat-persian': 'Persian Cat',
+    'cat-siamese': 'Siamese Cat',
+    'cat-maine-coon': 'Maine Coon',
+    'other': 'beloved pet',
+  };
+  return breedMap[breed] || breed || 'pet';
 }
 
 /**

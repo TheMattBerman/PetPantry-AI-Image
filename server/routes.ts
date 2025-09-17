@@ -116,6 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transformationResult = await createBaseballCard({
           petImageUrl: transformation.originalImageUrl || "",
           petName: validatedData.petName,
+          petBreed: validatedData.petBreed || 'pet',
           team: "Pet Pantry All-Stars",
           position: "Good Boy/Girl",
           stats: stats,
@@ -124,6 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transformationResult = await createSuperheroImage({
           petImageUrl: transformation.originalImageUrl || "",
           petName: validatedData.petName,
+          petBreed: validatedData.petBreed || 'pet',
           heroName: `Super ${validatedData.petName}`,
           powers: (validatedData.traits as string[]) || ["loyalty", "cuteness", "treat detection"],
         });
