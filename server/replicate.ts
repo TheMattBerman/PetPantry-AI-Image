@@ -24,7 +24,7 @@ async function resolveImageInput(imageUrl: string): Promise<string> {
     
     console.log("Uploading temp file to Replicate...");
     // Upload the buffer to Replicate and get a URL
-    const uploadedFile = await replicate.files.upload(fileData.buffer, `pet-${tempFileId}.jpg`);
+    const uploadedFile = await replicate.files.create(fileData.buffer);
     console.log("Replicate upload successful:", uploadedFile.id);
     return uploadedFile.urls.get;
   } else {
@@ -106,7 +106,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     console.log("Model: google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5");
     console.log("Prompt:", prompt);
     console.log("Image type:", typeof resolvedImage);
-    console.log("Image is Blob:", resolvedImage instanceof Blob);
+    console.log("Image URL:", resolvedImage);
     console.log("=== CALLING REPLICATE ===");
     
     const output = await replicate.run(
@@ -134,10 +134,10 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     console.log("=== END DEBUG ===");
 
     // Handle Blob/file outputs by uploading them to get a URL
-    if (finalOutput instanceof Blob || (finalOutput && typeof finalOutput.arrayBuffer === 'function')) {
+    if ((typeof Blob !== 'undefined' && finalOutput instanceof Blob) || (finalOutput && typeof finalOutput.arrayBuffer === 'function')) {
       console.log("Detected Blob output, uploading to get URL...");
       try {
-        const uploadedResult = await replicate.files.upload(finalOutput, 'result.png');
+        const uploadedResult = await replicate.files.create(finalOutput);
         console.log("Successfully uploaded result:", uploadedResult.id);
         return {
           success: true,
@@ -269,7 +269,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     console.log("Model: google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5");
     console.log("Prompt:", prompt);
     console.log("Image type:", typeof resolvedImage);
-    console.log("Image is Blob:", resolvedImage instanceof Blob);
+    console.log("Image URL:", resolvedImage);
     console.log("=== CALLING REPLICATE ===");
     
     const output = await replicate.run(
@@ -291,7 +291,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     console.log("=== SUPERHERO TRANSFORMATION DEBUG ===");
     console.log("Input prompt:", prompt);
     console.log("Resolved image type:", typeof resolvedImage);
-    console.log("Resolved image is Blob:", resolvedImage instanceof Blob);
+    console.log("Resolved image URL:", resolvedImage);
     console.log("Superhero Replicate output:", JSON.stringify(finalOutput, null, 2));
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
