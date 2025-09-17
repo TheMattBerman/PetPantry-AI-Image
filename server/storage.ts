@@ -82,10 +82,17 @@ export class DatabaseStorage implements IStorage {
 
   // Backend prompt optimization methods
   async getActivePromptTemplate(category: string): Promise<PromptTemplateSelect | undefined> {
-    const [template] = await db.select().from(promptTemplates)
-      .where(and(eq(promptTemplates.category, category), eq(promptTemplates.isActive, true)))
-      .orderBy(desc(promptTemplates.updatedAt));
-    return template || undefined;
+    // Get all active templates for the category
+    const templates = await db.select().from(promptTemplates)
+      .where(and(eq(promptTemplates.category, category), eq(promptTemplates.isActive, true)));
+    
+    if (templates.length === 0) {
+      return undefined;
+    }
+    
+    // Randomly select one template to provide variety
+    const randomIndex = Math.floor(Math.random() * templates.length);
+    return templates[randomIndex];
   }
 
   async getAllPromptTemplates(): Promise<PromptTemplateSelect[]> {
