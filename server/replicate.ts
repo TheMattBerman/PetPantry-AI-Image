@@ -11,9 +11,9 @@ export const replicate = new Replicate({
 /**
  * Helper function to resolve different image input types for Replicate
  */
-async function resolveImageInput(imageUrl: string): Promise<any> {
+async function resolveImageInput(imageUrl: string): Promise<string> {
   if (imageUrl.startsWith('temp://')) {
-    // Handle temporary uploaded files
+    // Handle temporary uploaded files by uploading to Replicate first
     const tempFileId = imageUrl.replace('temp://', '');
     const tempFiles = (global as any).tempFiles || new Map();
     const fileData = tempFiles.get(tempFileId);
@@ -22,9 +22,11 @@ async function resolveImageInput(imageUrl: string): Promise<any> {
       throw new Error('Uploaded file not found or expired');
     }
     
-    // Convert buffer to a Blob for Replicate
-    const blob = new Blob([fileData.buffer], { type: fileData.mimetype });
-    return blob;
+    console.log("Uploading temp file to Replicate...");
+    // Upload the buffer to Replicate and get a URL
+    const uploadedFile = await replicate.files.upload(fileData.buffer, `pet-${tempFileId}.jpg`);
+    console.log("Replicate upload successful:", uploadedFile.id);
+    return uploadedFile.urls.get;
   } else {
     // Handle regular HTTP URLs
     return imageUrl;
@@ -100,40 +102,67 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     // Resolve the image input using our shared helper
     const resolvedImage = await resolveImageInput(input.petImageUrl);
 
+    console.log("=== BEFORE NANO-BANANA CALL ===");
+    console.log("Model: google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5");
+    console.log("Prompt:", prompt);
+    console.log("Image type:", typeof resolvedImage);
+    console.log("Image is Blob:", resolvedImage instanceof Blob);
+    console.log("=== CALLING REPLICATE ===");
+    
     const output = await replicate.run(
-      "google/nano-banana",
+      "google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5",
       {
         input: {
+          image: resolvedImage, // Use standard 'image' parameter
           prompt: prompt,
-          image_input: [resolvedImage], // Use the properly resolved image input
-          output_format: "png",
         }
       }
     );
     
     // Wait for the prediction to complete if it's a stream/promise
-    let finalOutput = output;
+    let finalOutput: any = output;
     if (output && typeof output === 'object' && 'then' in output) {
       finalOutput = await (output as Promise<any>);
     }
 
     console.log("=== BASEBALL CARD TRANSFORMATION DEBUG ===");
     console.log("Input prompt:", prompt);
-    console.log("Resolved image type:", typeof resolvedImage);
-    console.log("Resolved image is Blob:", resolvedImage instanceof Blob);
-    console.log("Baseball card Replicate output:", JSON.stringify(finalOutput, null, 2));
+    console.log("Resolved image URL:", resolvedImage);
+    console.log("Output constructor:", finalOutput?.constructor?.name);
     console.log("Output type:", typeof finalOutput);
     console.log("Is array:", Array.isArray(finalOutput));
     console.log("=== END DEBUG ===");
 
-    // nano-banana returns a direct URL string, not an array
+    // Handle Blob/file outputs by uploading them to get a URL
+    if (finalOutput instanceof Blob || (finalOutput && typeof finalOutput.arrayBuffer === 'function')) {
+      console.log("Detected Blob output, uploading to get URL...");
+      try {
+        const uploadedResult = await replicate.files.upload(finalOutput, 'result.png');
+        console.log("Successfully uploaded result:", uploadedResult.id);
+        return {
+          success: true,
+          imageUrl: uploadedResult.urls.get,
+        };
+      } catch (error) {
+        console.error("Failed to upload result blob:", error);
+        return {
+          success: false,
+          error: "Failed to process generated image",
+        };
+      }
+    }
+
+    // Handle direct URL string responses
     if (typeof finalOutput === 'string' && finalOutput && finalOutput.includes('http')) {
       console.log("Successfully returning image URL:", finalOutput);
       return {
         success: true,
         imageUrl: finalOutput,
       };
-    } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
+    } 
+    
+    // Handle array responses
+    if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
       
       // Handle ReadableStream or other non-string responses
@@ -160,6 +189,24 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
       };
     }
 
+    // Handle object responses that might contain URLs
+    if (finalOutput && typeof finalOutput === 'object') {
+      console.log("Object output detected, checking for URL fields...");
+      if (finalOutput.image && typeof finalOutput.image === 'string') {
+        return {
+          success: true,
+          imageUrl: finalOutput.image,
+        };
+      }
+      if (finalOutput.images && Array.isArray(finalOutput.images) && finalOutput.images.length > 0) {
+        return {
+          success: true,
+          imageUrl: finalOutput.images[0],
+        };
+      }
+    }
+
+    console.log("No valid output format detected");
     return {
       success: false,
       error: "No image generated",
@@ -218,19 +265,25 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     // Resolve the image input using our shared helper
     const resolvedImage = await resolveImageInput(input.petImageUrl);
 
+    console.log("=== BEFORE NANO-BANANA CALL ===");
+    console.log("Model: google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5");
+    console.log("Prompt:", prompt);
+    console.log("Image type:", typeof resolvedImage);
+    console.log("Image is Blob:", resolvedImage instanceof Blob);
+    console.log("=== CALLING REPLICATE ===");
+    
     const output = await replicate.run(
-      "google/nano-banana",
+      "google/nano-banana:63aa4a33b7b30c8c4f6d1d6ae77efc71b7e8b98c72dba8afb7bdd6a62c4b55c5",
       {
         input: {
+          image: resolvedImage, // Use standard 'image' parameter
           prompt: prompt,
-          image_input: [resolvedImage], // Use the properly resolved image input
-          output_format: "png",
         }
       }
     );
     
     // Wait for the prediction to complete if it's a stream/promise
-    let finalOutput = output;
+    let finalOutput: any = output;
     if (output && typeof output === 'object' && 'then' in output) {
       finalOutput = await (output as Promise<any>);
     }
@@ -315,7 +368,7 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
     );
     
     // Wait for the prediction to complete if it's a stream/promise
-    let finalOutput = output;
+    let finalOutput: any = output;
     if (output && typeof output === 'object' && 'then' in output) {
       finalOutput = await (output as Promise<any>);
     }
