@@ -8,6 +8,29 @@ export const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
+/**
+ * Helper function to resolve different image input types for Replicate
+ */
+async function resolveImageInput(imageUrl: string): Promise<any> {
+  if (imageUrl.startsWith('temp://')) {
+    // Handle temporary uploaded files
+    const tempFileId = imageUrl.replace('temp://', '');
+    const tempFiles = (global as any).tempFiles || new Map();
+    const fileData = tempFiles.get(tempFileId);
+    
+    if (!fileData) {
+      throw new Error('Uploaded file not found or expired');
+    }
+    
+    // Convert buffer to a Blob for Replicate
+    const blob = new Blob([fileData.buffer], { type: fileData.mimetype });
+    return blob;
+  } else {
+    // Handle regular HTTP URLs
+    return imageUrl;
+  }
+}
+
 // Types for Replicate model inputs and outputs
 export interface BaseballCardInput {
   petImageUrl: string;
@@ -74,12 +97,15 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
       .replaceAll('{team}', input.team || '')
       .replaceAll('{position}', input.position || 'Good Boy/Girl');
 
+    // Resolve the image input using our shared helper
+    const resolvedImage = await resolveImageInput(input.petImageUrl);
+
     const output = await replicate.run(
       "google/nano-banana",
       {
         input: {
           prompt: prompt,
-          image_input: [input.petImageUrl], // The uploaded pet image to transform
+          image_input: [resolvedImage], // Use the properly resolved image input
           output_format: "png",
         }
       }
@@ -96,7 +122,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     console.log("Is array:", Array.isArray(finalOutput));
 
     // nano-banana returns a direct URL string, not an array
-    if (typeof finalOutput === 'string' && finalOutput.includes('http')) {
+    if (typeof finalOutput === 'string' && finalOutput && finalOutput.includes('http')) {
       console.log("Successfully returning image URL:", finalOutput);
       return {
         success: true,
@@ -180,12 +206,15 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
       .replaceAll('{heroName}', heroName)
       .replaceAll('{powers}', powers);
 
+    // Resolve the image input using our shared helper
+    const resolvedImage = await resolveImageInput(input.petImageUrl);
+
     const output = await replicate.run(
       "google/nano-banana",
       {
         input: {
           prompt: prompt,
-          image_input: [input.petImageUrl], // The uploaded pet image to transform
+          image_input: [resolvedImage], // Use the properly resolved image input
           output_format: "png",
         }
       }
@@ -202,7 +231,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     console.log("Is array:", Array.isArray(finalOutput));
 
     // nano-banana returns a direct URL string, not an array
-    if (typeof finalOutput === 'string' && finalOutput.includes('http')) {
+    if (typeof finalOutput === 'string' && finalOutput && finalOutput.includes('http')) {
       console.log("Successfully returning image URL:", finalOutput);
       return {
         success: true,
@@ -278,7 +307,7 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
     console.log("Is array:", Array.isArray(finalOutput));
 
     // nano-banana returns a direct URL string, not an array
-    if (typeof finalOutput === 'string' && finalOutput.includes('http')) {
+    if (typeof finalOutput === 'string' && finalOutput && finalOutput.includes('http')) {
       console.log("Successfully returning image URL:", finalOutput);
       return {
         success: true,

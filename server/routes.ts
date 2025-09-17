@@ -82,12 +82,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Convert uploaded file to base64 data URL for immediate use
-      const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      // Store the uploaded file buffer and create a temporary identifier
+      // We'll use Replicate's built-in file handling directly in the transformation
+      const tempFileId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      
+      // Store file in a simple in-memory cache (for production, use cloud storage)
+      global.tempFiles = global.tempFiles || new Map();
+      global.tempFiles.set(tempFileId, {
+        buffer: req.file.buffer,
+        mimetype: req.file.mimetype,
+        originalname: req.file.originalname,
+        uploadedAt: Date.now()
+      });
+      
+      // Clean up old files (older than 1 hour)
+      for (const [id, fileData] of global.tempFiles.entries()) {
+        if (Date.now() - fileData.uploadedAt > 3600000) {
+          global.tempFiles.delete(id);
+        }
+      }
       
       res.json({
         success: true,
-        fileUrl: base64Image,
+        fileUrl: `temp://${tempFileId}`, // Special identifier for temp files
         message: "Pet photo uploaded successfully",
       });
     } catch (error) {

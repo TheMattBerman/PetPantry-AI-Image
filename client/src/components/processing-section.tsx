@@ -41,24 +41,29 @@ export default function ProcessingSection({ selectedTheme, onComplete, uploadedF
         throw new Error('Missing required data for image generation');
       }
 
-      // Convert the uploaded file to base64 data URL directly
-      const base64Image = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(uploadedFile);
-      });
+      // First, upload the image to get a real URL that nano-banana can use
+      const formData = new FormData();
+      formData.append('petPhoto', uploadedFile);
 
-      console.log('Generated base64 image for nano-banana:', base64Image.substring(0, 100) + '...');
+      console.log('Uploading image file:', uploadedFile.name, uploadedFile.size, 'bytes');
 
-      // Now use the base64 image for transformation
+      const uploadResponse = await apiRequest('POST', '/api/upload', formData);
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.message || 'Image upload failed');
+      }
+
+      console.log('Upload successful, image URL:', uploadResult.fileUrl);
+
+      // Now use the real image URL for transformation (nano-banana needs real URLs)
       const transformationData = {
         petName: petData.petName || 'Pet',
         theme: selectedTheme,
         petBreed: petData.petBreed || '',
         traits: petData.traits || [],
         customMessage: petData.customMessage || '',
-        originalImageUrl: base64Image
+        originalImageUrl: uploadResult.fileUrl
       };
 
       const response = await apiRequest('POST', '/api/transformations', transformationData);
