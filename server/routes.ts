@@ -82,12 +82,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // In a real app, you would save the file to cloud storage
-      const fileUrl = `https://images.unsplash.com/photo-${Date.now()}`;
+      // Convert uploaded file to base64 data URL for immediate use
+      const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       
       res.json({
         success: true,
-        fileUrl,
+        fileUrl: base64Image,
         message: "Pet photo uploaded successfully",
       });
     } catch (error) {

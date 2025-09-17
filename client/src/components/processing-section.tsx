@@ -37,17 +37,29 @@ export default function ProcessingSection({ selectedTheme, onComplete, uploadedF
   // Real image generation mutation
   const generateImage = useMutation({
     mutationFn: async () => {
-      if (!petData) {
+      if (!petData || !uploadedFile) {
         throw new Error('Missing required data for image generation');
       }
 
+      // First, upload the image to get a URL
+      const formData = new FormData();
+      formData.append('petPhoto', uploadedFile);
+
+      const uploadResponse = await apiRequest('POST', '/api/upload', formData);
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.message || 'Image upload failed');
+      }
+
+      // Now use the uploaded image URL for transformation
       const transformationData = {
         petName: petData.petName || 'Pet',
         theme: selectedTheme,
         petBreed: petData.petBreed || '',
         traits: petData.traits || [],
         customMessage: petData.customMessage || '',
-        originalImageUrl: 'user-uploaded-image', // Placeholder since we don't handle actual upload yet
+        originalImageUrl: uploadResult.fileUrl
       };
 
       const response = await apiRequest('POST', '/api/transformations', transformationData);
