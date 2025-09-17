@@ -172,9 +172,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (typeof transformationResult.imageUrl === 'string') {
           imageUrlToStore = transformationResult.imageUrl;
         } else if (typeof transformationResult.imageUrl === 'object') {
-          // For now, store a placeholder until we fix the Replicate integration
-          imageUrlToStore = 'ai-generated-placeholder-url';
-          console.log("Storing placeholder URL since imageUrl is an object:", transformationResult.imageUrl);
+          // Convert URL-like objects to strings (e.g., URL objects from FileOutput)
+          const urlStr = transformationResult.imageUrl?.toString?.() || String(transformationResult.imageUrl);
+          // Only store the converted URL if it looks like a valid HTTP(S) URL
+          if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
+            imageUrlToStore = urlStr;
+            console.log("Converted URL object to string:", urlStr);
+          } else {
+            imageUrlToStore = 'ai-generated-placeholder-url';
+            console.log("Could not convert URL object to valid HTTP URL, using placeholder:", transformationResult.imageUrl);
+          }
         } else {
           imageUrlToStore = String(transformationResult.imageUrl);
         }

@@ -23,10 +23,17 @@ async function resolveImageInput(imageUrl: string): Promise<string> {
     }
     
     console.log("Uploading temp file to Replicate...");
+    console.log("File buffer size:", fileData.buffer.length, "bytes");
+    console.log("File MIME type:", fileData.mimetype);
+    
     // Upload the buffer to Replicate and get a URL
     const uploadedFile = await replicate.files.create(fileData.buffer);
     console.log("Replicate upload successful:", uploadedFile.id);
-    return uploadedFile.urls.get;
+    console.log("Available URLs:", uploadedFile.urls);
+    
+    // Return the uploaded file object directly, or try the get URL
+    // Replicate models can accept file objects directly
+    return uploadedFile.urls.get || uploadedFile;
   } else {
     // Handle regular HTTP URLs
     return imageUrl;
