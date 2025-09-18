@@ -55,7 +55,7 @@ Please enhance this prompt to create a more detailed and effective image generat
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      max_tokens: 300,
+      max_completion_tokens: 300,
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -159,7 +159,7 @@ Return JSON only.`;
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      max_tokens: 700,
+      max_completion_tokens: 700,
       temperature: 0.7,
     });
 
@@ -212,7 +212,7 @@ Generate 4 creative, detailed prompts for this theme and pet name.`;
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      max_tokens: 500,
+      max_completion_tokens: 500,
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -265,7 +265,7 @@ Please write a creative description for this${breedText} pet.`;
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      max_tokens: 200,
+      max_completion_tokens: 200,
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
