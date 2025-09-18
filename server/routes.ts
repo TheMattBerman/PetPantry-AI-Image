@@ -5,7 +5,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertPetTransformationSchema, promptTemplateSchema, promptVariantSchema } from "@shared/schema";
 import { createBaseballCard, createSuperheroImage, generateBaseballStats, createCustomPromptImage } from "./replicate";
-import { enhancePrompt, generatePromptSuggestions, generatePetDescription } from "./openai";
+import { enhancePrompt, generatePromptSuggestions, generatePetDescription, generatePersonaStats } from "./openai";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -75,17 +75,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Mock pet detection (in real app, this would use AI)
       const isPetDetected = Math.random() > 0.1; // 90% success rate
-      
+
       if (!isPetDetected) {
-        return res.status(400).json({ 
-          message: "We couldn't detect a pet in this image. Please try another photo." 
+        return res.status(400).json({
+          message: "We couldn't detect a pet in this image. Please try another photo."
         });
       }
 
       // Store the uploaded file buffer and create a temporary identifier
       // We'll use Replicate's built-in file handling directly in the transformation
       const tempFileId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      
+
       // Store file in a simple in-memory cache (for production, use cloud storage)
       global.tempFiles = global.tempFiles || new Map();
       global.tempFiles.set(tempFileId, {
@@ -94,14 +94,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         originalname: req.file.originalname,
         uploadedAt: Date.now()
       });
-      
+
       // Clean up old files (older than 1 hour)
       for (const [id, fileData] of global.tempFiles.entries()) {
         if (Date.now() - fileData.uploadedAt > 3600000) {
           global.tempFiles.delete(id);
         }
       }
-      
+
       res.json({
         success: true,
         fileUrl: `temp://${tempFileId}`, // Special identifier for temp files
@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/transformations", async (req, res) => {
     try {
       const validatedData = insertPetTransformationSchema.parse(req.body);
-      
+
       // Create transformation record first
       const transformation = await storage.createPetTransformation({
         ...validatedData,
@@ -125,11 +125,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate AI transformation based on theme
       let transformationResult;
-      
+
       if (validatedData.theme === 'baseball') {
         // Generate baseball card stats
         const stats = generateBaseballStats(validatedData.petName, (validatedData.traits as string[]) || []);
-        
+
         transformationResult = await createBaseballCard({
           petImageUrl: transformation.originalImageUrl || "",
           petName: validatedData.petName,
@@ -147,8 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           powers: (validatedData.traits as string[]) || ["loyalty", "cuteness", "treat detection"],
         });
       } else {
-        return res.status(400).json({ 
-          message: "Invalid theme. Must be 'baseball' or 'superhero'" 
+        return res.status(400).json({
+          message: "Invalid theme. Must be 'baseball' or 'superhero'"
         });
       }
 
@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Transformation result:", JSON.stringify(transformationResult, null, 2));
       console.log("Image URL type:", typeof transformationResult.imageUrl);
       console.log("Image URL value:", transformationResult.imageUrl);
-      
+
       // Handle the case where imageUrl might be an object or stream
       let imageUrlToStore = null;
       if (transformationResult.imageUrl) {
@@ -186,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           imageUrlToStore = String(transformationResult.imageUrl);
         }
       }
-      
+
       const updatedTransformation = await storage.updatePetTransformation(
         transformation.id,
         { transformedImageUrl: imageUrlToStore }
@@ -205,9 +205,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
-        res.status(500).json({ 
-          message: "Transformation failed", 
-          error: error instanceof Error ? error.message : "Unknown error" 
+        res.status(500).json({
+          message: "Transformation failed",
+          error: error instanceof Error ? error.message : "Unknown error"
         });
       }
     }
@@ -217,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/email-capture", async (req, res) => {
     try {
       const validatedData = emailCaptureSchema.parse(req.body);
-      
+
       // Check if user exists, create if not
       let user = await storage.getUserByEmail(validatedData.email);
       if (!user) {
@@ -292,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/custom-prompt", async (req, res) => {
     try {
       const validatedData = customPromptSchema.parse(req.body);
-      
+
       // Generate AI image with custom prompt
       const transformationResult = await createCustomPromptImage({
         prompt: validatedData.prompt,
@@ -320,9 +320,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
-        res.status(500).json({ 
-          message: "Custom prompt generation failed", 
-          error: error instanceof Error ? error.message : "Unknown error" 
+        res.status(500).json({
+          message: "Custom prompt generation failed",
+          error: error instanceof Error ? error.message : "Unknown error"
         });
       }
     }
@@ -332,9 +332,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enhance-prompt", async (req, res) => {
     try {
       const validatedData = promptEnhancementSchema.parse(req.body);
-      
+
       const result = await enhancePrompt(validatedData.prompt, validatedData.petName);
-      
+
       if (!result.success) {
         return res.status(500).json({
           success: false,
@@ -353,9 +353,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
-        res.status(500).json({ 
-          message: "Prompt enhancement failed", 
-          error: error instanceof Error ? error.message : "Unknown error" 
+        res.status(500).json({
+          message: "Prompt enhancement failed",
+          error: error instanceof Error ? error.message : "Unknown error"
         });
       }
     }
@@ -365,9 +365,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/prompt-suggestions", async (req, res) => {
     try {
       const validatedData = promptSuggestionsSchema.parse(req.body);
-      
+
       const result = await generatePromptSuggestions(validatedData.theme, validatedData.petName);
-      
+
       if (!result.success) {
         return res.status(500).json({
           success: false,
@@ -386,9 +386,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
-        res.status(500).json({ 
-          message: "Prompt suggestions generation failed", 
-          error: error instanceof Error ? error.message : "Unknown error" 
+        res.status(500).json({
+          message: "Prompt suggestions generation failed",
+          error: error instanceof Error ? error.message : "Unknown error"
         });
       }
     }
@@ -398,13 +398,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pet-description", async (req, res) => {
     try {
       const validatedData = petDescriptionSchema.parse(req.body);
-      
+
       const result = await generatePetDescription(
-        validatedData.petName, 
-        validatedData.traits, 
+        validatedData.petName,
+        validatedData.traits,
         validatedData.breed
       );
-      
+
       if (!result.success) {
         return res.status(500).json({
           success: false,
@@ -423,11 +423,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
-        res.status(500).json({ 
-          message: "Pet description generation failed", 
-          error: error instanceof Error ? error.message : "Unknown error" 
+        res.status(500).json({
+          message: "Pet description generation failed",
+          error: error instanceof Error ? error.message : "Unknown error"
         });
       }
+    }
+  });
+
+  // Generate persona stats/content for final screen
+  app.post("/api/persona-stats", async (req, res) => {
+    try {
+      const schema = z.object({
+        petName: z.string().min(1),
+        breed: z.string().optional(),
+        traits: z.array(z.string()).default([]),
+        theme: z.enum(['baseball', 'superhero']),
+        tone: z.enum(['whimsical', 'epic', 'sportscaster']).optional(),
+        seed: z.number().optional(),
+        locale: z.string().optional(),
+      });
+
+      const input = schema.parse(req.body);
+      const result = await generatePersonaStats(input);
+
+      if (!result.success || !result.content) {
+        return res.status(500).json({ success: false, message: "Persona stat generation failed", error: result.error });
+      }
+
+      res.json({ success: true, content: result.content });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Persona stats endpoint error:", error);
+      res.status(500).json({ success: false, message: "Persona stat generation failed" });
     }
   });
 
@@ -435,7 +465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const adminAuth = (req: any, res: any, next: any) => {
     const adminToken = process.env.ADMIN_TOKEN || 'admin123'; // Change this in production
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== adminToken) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }

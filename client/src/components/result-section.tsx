@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, Facebook, Twitter, Instagram, Link2, Trophy, Users, Plus, Heart, Share2, Download as DownloadIcon, Star, Zap, Award, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { TransformationResult, PetData, Theme } from "@/lib/types";
+import type { TransformationResult, PetData, Theme, PersonaContent } from "@/lib/types";
+import { useEffect, useState } from "react";
 
 interface ResultSectionProps {
   transformationResult: TransformationResult;
@@ -14,8 +15,38 @@ interface ResultSectionProps {
 
 export default function ResultSection({ transformationResult, petData, selectedTheme, userEmail, onCreateAnother }: ResultSectionProps) {
   const { toast } = useToast();
+  const [persona, setPersona] = useState<PersonaContent | null>(null);
+  const [loadingPersona, setLoadingPersona] = useState(false);
 
-  // Generate theme-appropriate fun facts and quotes
+  // Fetch persona stats/content from backend; fallback to local copy if unavailable
+  useEffect(() => {
+    const fetchPersona = async () => {
+      try {
+        setLoadingPersona(true);
+        const res = await fetch('/api/persona-stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            petName: petData.name,
+            breed: petData.breed,
+            traits: petData.traits || [],
+            theme: selectedTheme,
+          }),
+        });
+        const data = await res.json();
+        if (data?.success && data?.content) {
+          setPersona(data.content as PersonaContent);
+        }
+      } catch (e) {
+        // silent fallback
+      } finally {
+        setLoadingPersona(false);
+      }
+    };
+    fetchPersona();
+  }, [petData.name, petData.breed, JSON.stringify(petData.traits), selectedTheme]);
+
+  // Local fallback content
   const generateFunFacts = () => {
     const isBaseball = selectedTheme === 'baseball';
     const petName = petData.name;
@@ -44,20 +75,20 @@ export default function ResultSection({ transformationResult, petData, selectedT
             description: "Most Valuable Pet award winner"
           }
         ],
-        quote: traits.includes('Playful') 
+        quote: traits.includes('Playful')
           ? `"${petName} brings the same energy to fetch that legends bring to the World Series!"`
-          : traits.includes('Loyal') 
-          ? `"Like the greatest teammates, ${petName} never leaves anyone behind!"`
-          : traits.includes('Smart') 
-          ? `"${petName}'s baseball IQ is off the charts - always knows where the ball will land!"`
-          : `"${petName} has that champion spirit that makes every day feel like the playoffs!"`,
-        funFact: breed === 'Golden Retriever' 
+          : traits.includes('Loyal')
+            ? `"Like the greatest teammates, ${petName} never leaves anyone behind!"`
+            : traits.includes('Smart')
+              ? `"${petName}'s baseball IQ is off the charts - always knows where the ball will land!"`
+              : `"${petName} has that champion spirit that makes every day feel like the playoffs!"`,
+        funFact: breed === 'Golden Retriever'
           ? `Golden Retrievers like ${petName} were originally bred to retrieve waterfowl - making them natural outfielders!`
           : breed === 'Border Collie'
-          ? `Border Collies like ${petName} have the intelligence to understand complex plays better than most rookie players!`
-          : breed === 'Labrador'
-          ? `Labradors like ${petName} have the stamina to play all 9 innings and still want extra rounds!`
-          : `${breed}s like ${petName} bring their own unique playing style to the diamond!`
+            ? `Border Collies like ${petName} have the intelligence to understand complex plays better than most rookie players!`
+            : breed === 'Labrador'
+              ? `Labradors like ${petName} have the stamina to play all 9 innings and still want extra rounds!`
+              : `${breed}s like ${petName} bring their own unique playing style to the diamond!`
       };
     } else {
       // Superhero theme
@@ -82,25 +113,36 @@ export default function ResultSection({ transformationResult, petData, selectedT
             description: "Top tier defender of the household"
           }
         ],
-        quote: traits.includes('Brave') 
+        quote: traits.includes('Brave')
           ? `"With great paws comes great responsibility - and ${petName} takes that seriously!"`
-          : traits.includes('Protective') 
-          ? `"${petName} guards their family with the dedication of a true superhero!"`
-          : traits.includes('Energetic') 
-          ? `"Faster than a speeding squirrel, more powerful than a vacuum cleaner - it's ${petName}!"`
-          : `"Every neighborhood needs a hero like ${petName} - defender of treats and belly rubs!"`,
-        funFact: breed === 'German Shepherd' 
+          : traits.includes('Protective')
+            ? `"${petName} guards their family with the dedication of a true superhero!"`
+            : traits.includes('Energetic')
+              ? `"Faster than a speeding squirrel, more powerful than a vacuum cleaner - it's ${petName}!"`
+              : `"Every neighborhood needs a hero like ${petName} - defender of treats and belly rubs!"`,
+        funFact: breed === 'German Shepherd'
           ? `German Shepherds like ${petName} have been real-life heroes in police and military work for over 100 years!`
           : breed === 'Husky'
-          ? `Huskies like ${petName} have the endurance to run over 100 miles a day - true superhero stamina!`
-          : breed === 'Rottweiler'
-          ? `Rottweilers like ${petName} were originally bred to drive cattle - they've always been protectors!`
-          : `${breed}s like ${petName} have their own special superpowers that make them amazing companions!`
+            ? `Huskies like ${petName} have the endurance to run over 100 miles a day - true superhero stamina!`
+            : breed === 'Rottweiler'
+              ? `Rottweilers like ${petName} were originally bred to drive cattle - they've always been protectors!`
+              : `${breed}s like ${petName} have their own special superpowers that make them amazing companions!`
       };
     }
   };
 
-  const funFacts = generateFunFacts();
+  const funFacts = persona
+    ? {
+      stats: (persona.stats || []).slice(0, 3).map((s) => ({
+        icon: <Star className="w-5 h-5 text-yellow-500" />,
+        label: s.label,
+        value: typeof s.value === 'number' ? String(s.value) : s.value,
+        description: s.blurb,
+      })),
+      quote: persona.catchphrase || generateFunFacts().quote,
+      funFact: persona.origin || generateFunFacts().funFact,
+    }
+    : generateFunFacts();
 
   const handleCopyLink = async () => {
     try {
@@ -122,10 +164,10 @@ export default function ResultSection({ transformationResult, petData, selectedT
     const shareText = `Check out my pet ${petData.name}'s amazing ${selectedTheme === 'baseball' ? 'baseball card' : 'superhero'} transformation! 🐾✨`;
     const shareUrl = window.location.href;
     const imageUrl = transformationResult.transformedImageUrl;
-    
+
     // Enhanced share text with fun facts
     const enhancedShareText = `🎉 Meet ${petData.name}! Just transformed into ${selectedTheme === 'baseball' ? 'a legendary baseball player ⚾' : 'an epic superhero 🦸‍♂️'}! ${shareText}`;
-    
+
     let url = '';
     switch (platform) {
       case 'facebook':
@@ -163,7 +205,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-          
+
           toast({
             title: "Download & Share Ready!",
             description: "Image downloaded and share text copied to clipboard!",
@@ -176,7 +218,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
         }
         return;
     }
-    
+
     if (url) {
       window.open(url, '_blank', 'width=600,height=400');
       toast({
@@ -216,9 +258,9 @@ export default function ResultSection({ transformationResult, petData, selectedT
                     <h4 className="text-lg font-bold text-gray-800 mb-2">
                       {selectedTheme === 'baseball' ? '⚾ Player Stats' : '🦸 Hero Stats'}
                     </h4>
-                    <p className="text-sm text-gray-600">AI-generated based on {petData.name}'s traits</p>
+                    <p className="text-sm text-gray-600">{loadingPersona ? 'Generating personalized stats…' : `AI-generated based on ${petData.name}'s traits`}</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 gap-3">
                     {funFacts.stats.map((stat, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-white/80 rounded-lg hover:bg-white transition-all">
@@ -308,7 +350,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
                   <p className="text-sm text-gray-600 mb-4">
                     High-resolution version sent to: <strong>{userEmail}</strong>
                   </p>
-                  <Button 
+                  <Button
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                     onClick={() => toast({
                       title: "Download Starting",

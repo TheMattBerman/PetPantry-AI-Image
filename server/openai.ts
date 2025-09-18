@@ -59,7 +59,7 @@ Please enhance this prompt to create a more detailed and effective image generat
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     if (!result.enhancedPrompt) {
       throw new Error("No enhanced prompt received from AI");
     }
@@ -73,6 +73,113 @@ Please enhance this prompt to create a more detailed and effective image generat
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// Persona stats types
+export interface PersonaStatItem {
+  label: string;
+  value: number | string;
+  blurb: string;
+}
+
+export interface PersonaSignatureMove {
+  name: string;
+  description: string;
+}
+
+export interface PersonaFlavorItem {
+  title: string;
+  content: string;
+}
+
+export interface PersonaContent {
+  personaName: string;
+  personaTitle: string;
+  stats: PersonaStatItem[];
+  signatureMove: PersonaSignatureMove;
+  origin: string;
+  catchphrase: string;
+  flavor: PersonaFlavorItem[];
+}
+
+export interface GeneratePersonaStatsResult {
+  success: boolean;
+  content?: PersonaContent;
+  error?: string;
+}
+
+/**
+ * Generate persona stats/content for the final screen
+ */
+export async function generatePersonaStats(input: {
+  petName: string;
+  breed?: string;
+  traits: string[];
+  theme: 'baseball' | 'superhero';
+  tone?: 'whimsical' | 'epic' | 'sportscaster';
+  seed?: number;
+  locale?: string;
+}): Promise<GeneratePersonaStatsResult> {
+  try {
+    const systemPrompt = `You are generating fun, family-friendly persona stats for a PET turned into a {theme} character. Be specific to the pet’s traits (species/breed/color/size if provided) and keep responses safe and brand-neutral. Return STRICT JSON matching the schema. No extra text.`;
+
+    const tone = input.tone || (input.theme === 'baseball' ? 'sportscaster' : 'whimsical');
+    const userPrompt = `Pet:
+- name: ${input.petName}
+- breed: ${input.breed || ''}
+- traits: ${input.traits && input.traits.length ? input.traits.join(', ') : 'cute, lovable'}
+
+Persona:
+- type: ${input.theme === 'baseball' ? 'sports' : 'superhero'}
+- sport: ${input.theme === 'baseball' ? 'baseball' : ''}
+- tone: ${tone}
+
+Constraints:
+- Avoid real-world brand/trademark/team names.
+- Family-friendly, positive language.
+- Honor max lengths.
+
+Schema fields and max lengths:
+- personaName (<=40)
+- personaTitle (<=60)
+- stats: 4-6 items of { label (<=20), value (1-100 integer for numeric-like stats or short string when appropriate), blurb (<=80) }
+- signatureMove: { name (<=30), description (<=100) }
+- origin (<=160)
+- catchphrase (<=80)
+- flavor: 2-3 cards of { title (<=24), content (<=100) }
+
+Return JSON only.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-5-mini", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 700,
+      temperature: 0.7,
+    });
+
+    const raw = response.choices?.[0]?.message?.content || '{}';
+    const parsed = JSON.parse(raw);
+
+    // Light shape validation
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.stats)) {
+      throw new Error('Invalid persona content');
+    }
+
+    return {
+      success: true,
+      content: parsed as PersonaContent,
+    };
+  } catch (error) {
+    console.error("Persona stats generation error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -109,7 +216,7 @@ Generate 4 creative, detailed prompts for this theme and pet name.`;
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     if (!result.suggestions || !Array.isArray(result.suggestions)) {
       throw new Error("No valid suggestions received from AI");
     }
@@ -144,7 +251,7 @@ Return your response in JSON format: { "description": "your description here" }`
 
     const traitsText = traits.length > 0 ? traits.join(", ") : "lovable and unique";
     const breedText = breed ? ` ${breed}` : "";
-    
+
     const userPrompt = `Pet name: "${petName}"
 ${breed ? `Breed: "${breed}"` : ''}
 Traits: ${traitsText}
@@ -162,7 +269,7 @@ Please write a creative description for this${breedText} pet.`;
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     if (!result.description) {
       throw new Error("No description received from AI");
     }

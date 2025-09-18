@@ -19,6 +19,32 @@ export interface TransformationResult {
   };
 }
 
+export interface PersonaStatItem {
+  label: string;
+  value: number | string;
+  blurb: string;
+}
+
+export interface PersonaSignatureMove {
+  name: string;
+  description: string;
+}
+
+export interface PersonaFlavorItem {
+  title: string;
+  content: string;
+}
+
+export interface PersonaContent {
+  personaName: string;
+  personaTitle: string;
+  stats: PersonaStatItem[];
+  signatureMove: PersonaSignatureMove;
+  origin: string;
+  catchphrase: string;
+  flavor: PersonaFlavorItem[];
+}
+
 export interface AppState {
   currentStep: Step;
   uploadedFile: File | null;
