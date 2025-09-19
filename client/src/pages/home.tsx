@@ -7,8 +7,7 @@ import CustomizationForm from "@/components/customization-form";
 import EmailGate from "@/components/email-gate";
 import ProcessingSection from "@/components/processing-section";
 import ResultSection from "@/components/result-section";
-import { PawPrint, Wand2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import type { AppState, Theme } from "@/lib/types";
 
 export default function Home() {
@@ -43,10 +42,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center">
-                <PawPrint className="text-white text-lg" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-800">The Pet Pantry</h1>
+              <a href="https://thepetpantry.com" target="_blank" rel="noopener noreferrer">
+                <img src="/images/the-pet-pantry-logo.png" alt="The Pet Pantry logo" className="h-16 w-auto" />
+              </a>
             </div>
             <div className="flex items-center space-x-3">
               <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
@@ -62,28 +60,28 @@ export default function Home() {
         {appState.currentStep === 'hero' && (
           <HeroSection onStart={() => updateState({ currentStep: 'upload' })} />
         )}
-        
+
         {appState.currentStep === 'upload' && (
           <UploadSection
             onFileUploaded={(file) => updateState({ uploadedFile: file, currentStep: 'theme' })}
             uploadedFile={appState.uploadedFile}
           />
         )}
-        
+
         {appState.currentStep === 'theme' && (
           <ThemeSelection
             selectedTheme={appState.selectedTheme}
             onThemeSelected={(theme) => updateState({ selectedTheme: theme, currentStep: 'customize' })}
           />
         )}
-        
+
         {appState.currentStep === 'customize' && (
           <CustomizationForm
             selectedTheme={appState.selectedTheme!}
             onSubmit={(petData) => updateState({ petData, currentStep: 'email-gate' })}
           />
         )}
-        
+
         {appState.currentStep === 'email-gate' && (
           <EmailGate
             petData={appState.petData!}
@@ -91,7 +89,7 @@ export default function Home() {
             onEmailSubmit={(email) => updateState({ userEmail: email, currentStep: 'processing' })}
           />
         )}
-        
+
         {appState.currentStep === 'processing' && (
           <ProcessingSection
             selectedTheme={appState.selectedTheme!}
@@ -100,7 +98,7 @@ export default function Home() {
             onComplete={(result) => updateState({ transformationResult: result, currentStep: 'result' })}
           />
         )}
-        
+
         {appState.currentStep === 'result' && (
           <ResultSection
             transformationResult={appState.transformationResult!}
@@ -117,12 +115,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                <PawPrint className="text-white" />
-              </div>
-              <h4 className="text-lg font-bold">The Pet Pantry</h4>
+              <a href="https://thepetpantry.com" target="_blank" rel="noopener noreferrer">
+                <img src="/images/the-pet-pantry-logo.png" alt="The Pet Pantry logo" className="h-16 w-auto" />
+              </a>
             </div>
-            <p className="text-gray-300 mb-4">Transforming pets into stars, one photo at a time</p>
+            <p className="text-gray-300 mb-1">Transforming pets into stars, one photo at a time</p>
+            <p className="text-gray-400 text-sm mb-4">Nutrition you can trust, service you can depend on.</p>
             <div className="flex justify-center space-x-6 text-sm">
               <a href="#" className="text-gray-300 hover:text-white">Privacy Policy</a>
               <a href="#" className="text-gray-300 hover:text-white">Terms of Service</a>

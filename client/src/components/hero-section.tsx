@@ -10,8 +10,8 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
     <section className="text-center mb-12 fade-in" id="hero-section">
       <div className="max-w-3xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-          Transform Your Pet Into An{" "}
-          <span className="text-brand-primary">Triangle Legend!</span>
+          Transform Your Pet Into A{" "}
+          <span className="text-brand-primary">North Carolina Legend!</span>
         </h2>
         <p className="text-xl text-gray-600 mb-8">
           Turn your furry friend into a baseball legend or superhero with our AI-powered transformation tool.
@@ -35,41 +35,49 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
         {/* Example Gallery - Vertical Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <img
-              src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
-              alt="Happy dog transformation example"
-              className="w-full h-48 object-cover"
-            />
+            <div className="w-full max-h-96 bg-white flex items-center justify-center">
+              <img
+                src="/images/baseball-star.jpg"
+                alt="Baseball star example"
+                className="max-h-96 w-auto h-auto object-contain"
+              />
+            </div>
             <div className="p-3 bg-white">
               <p className="text-xs text-gray-600 font-medium">Baseball Star</p>
             </div>
           </div>
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <img
-              src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
-              alt="Dog superhero transformation example"
-              className="w-full h-48 object-cover"
-            />
+            <div className="w-full max-h-96 bg-white flex items-center justify-center">
+              <img
+                src="/images/superhero.jpg"
+                alt="Superhero example"
+                className="max-h-96 w-auto h-auto object-contain"
+              />
+            </div>
             <div className="p-3 bg-white">
               <p className="text-xs text-gray-600 font-medium">Superhero</p>
             </div>
           </div>
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <img
-              src="https://images.unsplash.com/photo-1558788353-f76d92427f16?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
-              alt="Cat transformation example"
-              className="w-full h-48 object-cover"
-            />
+            <div className="w-full max-h-96 bg-white flex items-center justify-center">
+              <img
+                src="/images/all-star-cat.webp"
+                alt="Cat transformation example"
+                className="max-h-96 w-auto h-auto object-contain"
+              />
+            </div>
             <div className="p-3 bg-white">
               <p className="text-xs text-gray-600 font-medium">All-Star Cat</p>
             </div>
           </div>
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <img
-              src="https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
-              alt="Pet family transformation example"
-              className="w-full h-48 object-cover"
-            />
+            <div className="w-full max-h-96 bg-white flex items-center justify-center">
+              <img
+                src="https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=400"
+                alt="Pet family transformation example"
+                className="max-h-96 w-auto h-auto object-contain"
+              />
+            </div>
             <div className="p-3 bg-white">
               <p className="text-xs text-gray-600 font-medium">Team Captain</p>
             </div>

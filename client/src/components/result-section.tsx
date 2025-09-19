@@ -161,12 +161,16 @@ export default function ResultSection({ transformationResult, petData, selectedT
   };
 
   const handleSocialShare = async (platform: string) => {
-    const shareText = `Check out my pet ${petData.name}'s amazing ${selectedTheme === 'baseball' ? 'baseball card' : 'superhero'} transformation! 🐾✨`;
     const shareUrl = window.location.href;
+    const siteUrl = 'https://thepetpantry.com';
+    const handleOrName = '@ThePetPantry';
     const imageUrl = transformationResult.transformedImageUrl;
 
-    // Enhanced share text with fun facts
-    const enhancedShareText = `🎉 Meet ${petData.name}! Just transformed into ${selectedTheme === 'baseball' ? 'a legendary baseball player ⚾' : 'an epic superhero 🦸‍♂️'}! ${shareText}`;
+    const baseText = `Check out my pet ${petData.name}'s ${selectedTheme === 'baseball' ? 'baseball card' : 'superhero'} transformation! 🐾✨`;
+    const callout = `Made possible by ${handleOrName} ${siteUrl}`;
+
+    // Enhanced share text with fun facts + brand mention
+    const enhancedShareText = `🎉 Meet ${petData.name}! Now ${selectedTheme === 'baseball' ? 'a legendary baseball player ⚾' : 'an epic superhero 🦸‍♂️'}! ${baseText}\n\n${callout}`;
 
     let url = '';
     switch (platform) {
@@ -175,7 +179,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
         url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(enhancedShareText)}`;
         break;
       case 'twitter':
-        // Twitter will show image preview from URL
+        // Twitter/X will show image preview from URL
         url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(enhancedShareText)}&url=${encodeURIComponent(shareUrl)}`;
         break;
       case 'instagram':
@@ -223,7 +227,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
       window.open(url, '_blank', 'width=600,height=400');
       toast({
         title: "Share window opened!",
-        description: "Your post will include the image and custom text.",
+        description: "Your post will include the image and branded caption.",
       });
     }
   };
