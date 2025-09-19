@@ -123,7 +123,7 @@ export async function generatePersonaStats(input: {
   locale?: string;
 }): Promise<GeneratePersonaStatsResult> {
   try {
-    const systemPrompt = `You are generating fun, family-friendly persona stats for a PET turned into a {theme} character. Be specific to the pet’s traits (species/breed/color/size if provided) and keep responses safe and brand-neutral. Return STRICT JSON matching the schema. No extra text.`;
+    const systemPrompt = `You are generating fun, family-friendly persona stats for ${input.petName} turned into a ${input.theme} character. Be specific to the pet’s traits (species/breed/color/size if provided) and keep responses safe and brand-neutral. Return STRICT JSON matching the schema. No extra text.`;
 
     const tone = input.tone || (input.theme === 'baseball' ? 'sportscaster' : 'whimsical');
     const userPrompt = `Pet:
