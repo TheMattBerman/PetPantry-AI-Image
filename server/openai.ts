@@ -160,7 +160,6 @@ Return JSON only.`;
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 700,
-      temperature: 0.7,
     });
 
     const raw = response.choices?.[0]?.message?.content || '{}';

@@ -304,22 +304,11 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     }
     
     // Replace placeholders with actual values - use replaceAll for multiple occurrences
-    console.log("=== PLACEHOLDER REPLACEMENT DEBUG ===");
-    console.log("BasePrompt:", basePrompt);
-    console.log("Input petName:", input.petName);
-    console.log("Input petBreed:", input.petBreed);
-    console.log("Converted breed:", convertBreedToReadable(input.petBreed || 'pet'));
-    console.log("Hero name:", heroName);
-    console.log("Powers:", powers);
-    
     const prompt = basePrompt
       .replaceAll('{petName}', input.petName)
       .replaceAll('{petBreed}', convertBreedToReadable(input.petBreed || 'pet'))
       .replaceAll('{heroName}', heroName)
       .replaceAll('{powers}', powers);
-      
-    console.log("Final prompt after replacement:", prompt);
-    console.log("=== END REPLACEMENT DEBUG ===");
 
     // Resolve the image input using our shared helper
     const resolvedImage = await resolveImageInput(input.petImageUrl);

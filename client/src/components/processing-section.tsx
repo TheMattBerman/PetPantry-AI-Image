@@ -58,9 +58,9 @@ export default function ProcessingSection({ selectedTheme, onComplete, uploadedF
 
       // Now use the real image URL for transformation (nano-banana needs real URLs)
       const transformationData = {
-        petName: petData.petName || 'Pet',
+        petName: petData.name || 'Pet',
         theme: selectedTheme,
-        petBreed: petData.petBreed || '',
+        petBreed: petData.breed || '',
         traits: petData.traits || [],
         customMessage: petData.customMessage || '',
         originalImageUrl: uploadResult.fileUrl
