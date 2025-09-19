@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const requiredEnv = [
@@ -52,10 +52,6 @@ export async function getPresignedGetUrl(params: {
     key: string;
     expiresInSeconds?: number;
 }): Promise<string> {
-    const command = new PutObjectCommand({}) as any; // placeholder to satisfy TS in generic signature
-    // Workaround: create a dummy command type inference; we'll actually use a GET presign via manual URL composition is not ideal.
-    // Simpler: Use @aws-sdk/s3-request-presigner with a GetObjectCommand, but avoid import overhead inline.
-    const { GetObjectCommand } = await import("@aws-sdk/client-s3");
     const getCmd = new GetObjectCommand({ Bucket: params.bucket, Key: params.key });
     const url = await getSignedUrl(r2, getCmd, { expiresIn: params.expiresInSeconds ?? 900 });
     return url;
@@ -77,8 +73,34 @@ export async function getPresignedPutUrl(params: {
 }
 
 export function generatedPublicUrlForKey(key: string): string | null {
-    const base = process.env.R2_GENERATED_PUBLIC_BASE_URL;
-    if (!base) return null;
+    let base = process.env.R2_GENERATED_PUBLIC_BASE_URL || "";
+
+    // If base isn't provided or doesn't look like r2.dev, attempt to build from envs
+    const bucket = process.env.R2_GENERATED_BUCKET;
+    const accountId = process.env.R2_ACCOUNT_ID;
+
+    // Normalize common misconfigs like cloudflarestorage endpoint
+    if (base.includes("r2.cloudflarestorage.com")) {
+        // Accept formats like https://<account>.r2.cloudflarestorage.com/<bucket>
+        try {
+            const u = new URL(base);
+            const parts = u.hostname.split("."); // [accountId, 'r2', 'cloudflarestorage', 'com']
+            const pathParts = u.pathname.replace(/^\//, "").split("/");
+            const b = bucket || pathParts[0];
+            const a = accountId || parts[0];
+            base = `https://${b}.${a}.r2.dev`;
+        } catch { }
+    }
+
+    // Construct if missing or clearly not r2.dev
+    if (!base || !base.includes("r2.dev")) {
+        if (bucket && accountId) {
+            base = `https://${bucket}.${accountId}.r2.dev`;
+        } else {
+            return null;
+        }
+    }
+
     const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
     return `${trimmed}/${key}`;
 }

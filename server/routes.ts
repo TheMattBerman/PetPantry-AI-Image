@@ -58,6 +58,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // R2 debug: verify env presence and a quick write
+  app.get("/api/r2-debug", (req, res) => {
+    const envs = {
+      R2_ACCOUNT_ID: !!process.env.R2_ACCOUNT_ID,
+      R2_ACCESS_KEY_ID: !!process.env.R2_ACCESS_KEY_ID,
+      R2_SECRET_ACCESS_KEY: !!process.env.R2_SECRET_ACCESS_KEY,
+      R2_UPLOADS_BUCKET: process.env.R2_UPLOADS_BUCKET || null,
+      R2_GENERATED_BUCKET: process.env.R2_GENERATED_BUCKET || null,
+      R2_GENERATED_PUBLIC_BASE_URL: process.env.R2_GENERATED_PUBLIC_BASE_URL || null,
+    };
+    res.json({ success: true, envs });
+  });
+
+  app.post("/api/r2-debug", async (req, res) => {
+    try {
+      const envs = {
+        R2_ACCOUNT_ID: !!process.env.R2_ACCOUNT_ID,
+        R2_ACCESS_KEY_ID: !!process.env.R2_ACCESS_KEY_ID,
+        R2_SECRET_ACCESS_KEY: !!process.env.R2_SECRET_ACCESS_KEY,
+        R2_UPLOADS_BUCKET: process.env.R2_UPLOADS_BUCKET || null,
+        R2_GENERATED_BUCKET: process.env.R2_GENERATED_BUCKET || null,
+        R2_GENERATED_PUBLIC_BASE_URL: process.env.R2_GENERATED_PUBLIC_BASE_URL || null,
+      };
+
+      const hasAll = envs.R2_ACCOUNT_ID && envs.R2_ACCESS_KEY_ID && envs.R2_SECRET_ACCESS_KEY && !!envs.R2_UPLOADS_BUCKET;
+      if (!hasAll) {
+        return res.status(400).json({ success: false, message: "Missing R2 envs", envs });
+      }
+
+      const key = makeUploadKey({ prefix: 'debug', originalName: 'r2-debug.txt' });
+      const body = Buffer.from(`r2 debug ${new Date().toISOString()}`);
+      await uploadBufferToR2({
+        bucket: process.env.R2_UPLOADS_BUCKET as string,
+        key,
+        body,
+        contentType: 'text/plain',
+        cacheControl: 'no-store',
+      });
+
+      res.json({ success: true, message: 'Wrote debug object to uploads bucket', key });
+    } catch (e: any) {
+      res.status(500).json({ success: false, message: 'R2 debug write failed', error: e?.message || String(e) });
+    }
+  });
+
   // Get app statistics (mock data for now)
   app.get("/api/stats", (req, res) => {
     res.json({
@@ -84,6 +129,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const hasR2Config = !!(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_UPLOADS_BUCKET);
+      console.log("/api/upload hasR2Config:", hasR2Config, {
+        accountId: !!process.env.R2_ACCOUNT_ID,
+        accessKey: !!process.env.R2_ACCESS_KEY_ID,
+        secretKey: !!process.env.R2_SECRET_ACCESS_KEY,
+        uploadsBucket: process.env.R2_UPLOADS_BUCKET,
+      });
 
       if (!hasR2Config) {
         // Fallback to in-memory temp storage if R2 not configured
@@ -111,6 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Upload directly to R2 uploads bucket and return a presigned GET URL for downstream use
       const key = makeUploadKey({ userId: 'anon', originalName: req.file.originalname });
+      console.log("Uploading to R2:", { bucket: process.env.R2_UPLOADS_BUCKET, key, contentType: req.file.mimetype, size: req.file.buffer.length });
       await uploadBufferToR2({
         bucket: process.env.R2_UPLOADS_BUCKET as string,
         key,
@@ -118,12 +170,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contentType: req.file.mimetype,
         cacheControl: 'private, max-age=0, no-store',
       });
+      console.log("Upload to R2 successful:", { bucket: process.env.R2_UPLOADS_BUCKET, key });
 
       const signedUrl = await getPresignedGetUrl({
         bucket: process.env.R2_UPLOADS_BUCKET as string,
         key,
         expiresInSeconds: 3600,
       });
+      console.log("Generated presigned GET URL for upload");
 
       return res.json({
         success: true,
@@ -214,6 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If we have a usable image URL, try to copy it into the public R2 generated bucket
       try {
         if (imageUrlToStore && typeof imageUrlToStore === 'string' && process.env.R2_GENERATED_BUCKET) {
+          console.log("Mirroring generated image to R2:", { source: imageUrlToStore, bucket: process.env.R2_GENERATED_BUCKET });
           const resFetch = await fetch(imageUrlToStore);
           if (resFetch.ok) {
             const contentType = resFetch.headers.get('content-type') || 'image/jpeg';
@@ -227,9 +282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               contentType,
               cacheControl: 'public, max-age=31536000, immutable',
             });
+            console.log("Mirror to R2 successful:", { bucket: process.env.R2_GENERATED_BUCKET, key });
             const publicUrl = generatedPublicUrlForKey(key);
             if (publicUrl) {
               imageUrlToStore = publicUrl;
+              console.log("Using public R2 URL for transformation:", publicUrl);
             }
           }
         }
