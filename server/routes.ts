@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import { z } from "zod";
 import { storage } from "./storage";
+import { makeUploadKey, uploadBufferToR2, getPresignedGetUrl, makeGeneratedKey, generatedPublicUrlForKey } from "./r2";
 import { insertUserSchema, insertPetTransformationSchema, promptTemplateSchema, promptVariantSchema } from "@shared/schema";
 import { createBaseballCard, createSuperheroImage, generateBaseballStats, createCustomPromptImage } from "./replicate";
 import { enhancePrompt, generatePromptSuggestions, generatePetDescription, generatePersonaStats } from "./openai";
@@ -67,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File upload endpoint
-  app.post("/api/upload", upload.single('petPhoto'), (req, res) => {
+  app.post("/api/upload", upload.single('petPhoto'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -82,29 +83,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Store the uploaded file buffer and create a temporary identifier
-      // We'll use Replicate's built-in file handling directly in the transformation
-      const tempFileId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const hasR2Config = !!(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_UPLOADS_BUCKET);
 
-      // Store file in a simple in-memory cache (for production, use cloud storage)
-      global.tempFiles = global.tempFiles || new Map();
-      global.tempFiles.set(tempFileId, {
-        buffer: req.file.buffer,
-        mimetype: req.file.mimetype,
-        originalname: req.file.originalname,
-        uploadedAt: Date.now()
-      });
+      if (!hasR2Config) {
+        // Fallback to in-memory temp storage if R2 not configured
+        const tempFileId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        (global as any).tempFiles = (global as any).tempFiles || new Map();
+        (global as any).tempFiles.set(tempFileId, {
+          buffer: req.file.buffer,
+          mimetype: req.file.mimetype,
+          originalname: req.file.originalname,
+          uploadedAt: Date.now()
+        });
 
-      // Clean up old files (older than 1 hour)
-      for (const [id, fileData] of global.tempFiles.entries()) {
-        if (Date.now() - fileData.uploadedAt > 3600000) {
-          global.tempFiles.delete(id);
+        for (const [id, fileData] of (global as any).tempFiles.entries()) {
+          if (Date.now() - fileData.uploadedAt > 3600000) {
+            (global as any).tempFiles.delete(id);
+          }
         }
+
+        return res.json({
+          success: true,
+          fileUrl: `temp://${tempFileId}`,
+          message: "Pet photo uploaded successfully (temp storage)",
+        });
       }
 
-      res.json({
+      // Upload directly to R2 uploads bucket and return a presigned GET URL for downstream use
+      const key = makeUploadKey({ userId: 'anon', originalName: req.file.originalname });
+      await uploadBufferToR2({
+        bucket: process.env.R2_UPLOADS_BUCKET as string,
+        key,
+        body: req.file.buffer,
+        contentType: req.file.mimetype,
+        cacheControl: 'private, max-age=0, no-store',
+      });
+
+      const signedUrl = await getPresignedGetUrl({
+        bucket: process.env.R2_UPLOADS_BUCKET as string,
+        key,
+        expiresInSeconds: 3600,
+      });
+
+      return res.json({
         success: true,
-        fileUrl: `temp://${tempFileId}`, // Special identifier for temp files
+        fileUrl: signedUrl,
+        r2Key: key,
         message: "Pet photo uploaded successfully",
       });
     } catch (error) {
@@ -161,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Update transformation with generated image URL in database
+      // Optionally mirror generated image to R2 public bucket
       console.log("Transformation result:", JSON.stringify(transformationResult, null, 2));
       console.log("Image URL type:", typeof transformationResult.imageUrl);
       console.log("Image URL value:", transformationResult.imageUrl);
@@ -185,6 +209,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           imageUrlToStore = String(transformationResult.imageUrl);
         }
+      }
+
+      // If we have a usable image URL, try to copy it into the public R2 generated bucket
+      try {
+        if (imageUrlToStore && typeof imageUrlToStore === 'string' && process.env.R2_GENERATED_BUCKET) {
+          const resFetch = await fetch(imageUrlToStore);
+          if (resFetch.ok) {
+            const contentType = resFetch.headers.get('content-type') || 'image/jpeg';
+            const inferredExt = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+            const key = makeGeneratedKey({ type: validatedData.theme, resourceId: transformation.id, extension: inferredExt });
+            const arrayBuffer = await resFetch.arrayBuffer();
+            await uploadBufferToR2({
+              bucket: process.env.R2_GENERATED_BUCKET as string,
+              key,
+              body: Buffer.from(arrayBuffer),
+              contentType,
+              cacheControl: 'public, max-age=31536000, immutable',
+            });
+            const publicUrl = generatedPublicUrlForKey(key);
+            if (publicUrl) {
+              imageUrlToStore = publicUrl;
+            }
+          }
+        }
+      } catch (mirrorErr) {
+        console.error('Failed to mirror generated image to R2:', mirrorErr);
       }
 
       const updatedTransformation = await storage.updatePetTransformation(

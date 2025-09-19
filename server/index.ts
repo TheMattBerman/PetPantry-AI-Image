@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+app.disable('x-powered-by');
 app.use(express.json({ limit: '50mb' }));  // Increase limit for base64 images
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 

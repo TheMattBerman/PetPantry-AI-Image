@@ -1,0 +1,9 @@
+[
+    {
+        "ID": "abort-mpu-7d",
+        "Status": "Enabled",
+        "AbortIncompleteMultipartUpload": {
+            "DaysAfterInitiation": 7
+        }
+    }
+]

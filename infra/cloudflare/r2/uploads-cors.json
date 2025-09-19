@@ -1,0 +1,25 @@
+[
+    {
+        "AllowedOrigins": [
+            "https://app.thepetpantry.com",
+            "https://staging.thepetpantry.com",
+            "http://localhost:3000"
+        ],
+        "AllowedMethods": [
+            "GET",
+            "PUT",
+            "HEAD"
+        ],
+        "AllowedHeaders": [
+            "Authorization",
+            "Content-Type",
+            "x-amz-date",
+            "x-amz-content-sha256",
+            "x-amz-security-token"
+        ],
+        "ExposeHeaders": [
+            "ETag"
+        ],
+        "MaxAgeSeconds": 3600
+    }
+]
