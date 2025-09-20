@@ -5,6 +5,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { makeUploadKey, uploadBufferToR2, getPresignedGetUrl, makeGeneratedKey, generatedPublicUrlForKey } from "./r2";
 import { insertUserSchema, insertPetTransformationSchema, promptTemplateSchema, promptVariantSchema } from "@shared/schema";
+import { watermarkAndPreferJpeg } from "./watermark";
 import { createBaseballCard, createSuperheroImage, generateBaseballStats, createCustomPromptImage } from "./replicate";
 import { enhancePrompt, generatePromptSuggestions, generatePetDescription, generatePersonaStats } from "./openai";
 
@@ -265,20 +266,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // If we have a usable image URL, try to copy it into the public R2 generated bucket
+      // If we have a usable image URL, fetch, watermark with logo, convert to JPEG, and upload to the public R2 generated bucket
       try {
         if (imageUrlToStore && typeof imageUrlToStore === 'string' && process.env.R2_GENERATED_BUCKET) {
-          console.log("Mirroring generated image to R2:", { source: imageUrlToStore, bucket: process.env.R2_GENERATED_BUCKET });
+          console.log("Watermarking + mirroring generated image to R2:", { source: imageUrlToStore, bucket: process.env.R2_GENERATED_BUCKET });
           const resFetch = await fetch(imageUrlToStore);
           if (resFetch.ok) {
-            const contentType = resFetch.headers.get('content-type') || 'image/jpeg';
-            const inferredExt = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
-            const key = makeGeneratedKey({ type: validatedData.theme, resourceId: transformation.id, extension: inferredExt });
+            const sourceContentType = resFetch.headers.get('content-type') || 'image/jpeg';
             const arrayBuffer = await resFetch.arrayBuffer();
+            // Apply watermark and force JPEG output
+            const { buffer: stampedBuffer, extension, contentType } = await watermarkAndPreferJpeg(Buffer.from(arrayBuffer), sourceContentType, {
+              marginPx: 24,
+              logoWidthRatio: 0.08,
+              minLogoWidthPx: 64,
+              jpegQuality: 90,
+            });
+
+            const key = makeGeneratedKey({ type: validatedData.theme, resourceId: transformation.id, extension });
+
             await uploadBufferToR2({
               bucket: process.env.R2_GENERATED_BUCKET as string,
               key,
-              body: Buffer.from(arrayBuffer),
+              body: stampedBuffer,
               contentType,
               cacheControl: 'public, max-age=31536000, immutable',
             });

@@ -73,7 +73,7 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
             <div className="w-full max-h-96 bg-white flex items-center justify-center">
               <img
-                src="/images/raleigh-hero.jpg"
+                src="/images/superkane.jpg"
                 alt="Pet family transformation example"
                 className="max-h-96 w-auto h-auto object-contain"
               />
