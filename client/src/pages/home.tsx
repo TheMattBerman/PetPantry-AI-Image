@@ -116,7 +116,7 @@ export default function Home() {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <a href="https://thepetpantry.com" target="_blank" rel="noopener noreferrer">
-                <img src="/images/the-pet-pantry-logo.png" alt="The Pet Pantry logo" className="h-16 w-auto" />
+                <img src="/images/the-pet-pantry-logo-white.png" alt="The Pet Pantry logo" className="h-16 w-auto" />
               </a>
             </div>
             <p className="text-gray-300 mb-1">Transforming pets into stars, one photo at a time</p>
@@ -125,6 +125,17 @@ export default function Home() {
               <a href="#" className="text-gray-300 hover:text-white">Privacy Policy</a>
               <a href="#" className="text-gray-300 hover:text-white">Terms of Service</a>
               <a href="#" className="text-gray-300 hover:text-white">Contact Us</a>
+            </div>
+            <div className="mt-6 border-t border-gray-700 pt-4 text-xs text-gray-400">
+              Powered by{' '}
+              <a
+                href="https://emerald.digital"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-200 hover:text-white"
+              >
+                Emerald Digital
+              </a>
             </div>
           </div>
         </div>

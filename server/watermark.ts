@@ -88,12 +88,12 @@ export async function watermarkAndPreferJpeg(
     const sharp = sharpLib as any;
 
     const marginPx = Math.max(0, options.marginPx ?? 24);
-    const logoWidthRatio = options.logoWidthRatio ?? 0.08;
+  const logoWidthRatio = options.logoWidthRatio ?? 0.22;
     const minLogoWidthPx = options.minLogoWidthPx ?? 64;
     const jpegQuality = options.jpegQuality ?? 90;
 
     // Load base image and read dimensions
-    const base = sharp(inputBuffer, { failOn: false });
+    const base = sharp(inputBuffer);
     const meta = await base.metadata();
     const baseWidth: number | undefined = meta.width;
     const baseHeight: number | undefined = meta.height;
