@@ -162,15 +162,24 @@ export default function ResultSection({ transformationResult, petData, selectedT
 
   const handleSocialShare = async (platform: string) => {
     const shareUrl = window.location.href;
-    const siteUrl = 'https://thepetpantry.com';
-    const handleOrName = '@ThePetPantry';
+    const siteUrl = 'https://transform.thepetpantry.com';
     const imageUrl = transformationResult.transformedImageUrl;
 
-    const baseText = `Check out my pet ${petData.name}'s ${selectedTheme === 'baseball' ? 'baseball card' : 'superhero'} transformation! 🐾✨`;
-    const callout = `Made possible by ${handleOrName} ${siteUrl}`;
+    const platformHandles: Record<string, string> = {
+      facebook: '@FeedYourPetscom',
+      twitter: '@FeedYourPetsCom',
+      instagram: '@thepetpantrync',
+      default: '@thepetpantrync',
+    };
 
-    // Enhanced share text with fun facts + brand mention
-    const enhancedShareText = `🎉 Meet ${petData.name}! Now ${selectedTheme === 'baseball' ? 'a legendary baseball player ⚾' : 'an epic superhero 🦸‍♂️'}! ${baseText}\n\n${callout}`;
+    const platformHandle = platformHandles[platform] || platformHandles.default;
+    const themeHighlight = selectedTheme === 'baseball' ? 'a legendary baseball all-star ⚾' : 'an epic superhero 🦸‍♂️';
+    const baseText = `🎉 Meet ${petData.name}! Now ${themeHighlight}!`;
+    const challengeLine = 'I dare you to make your pet a legend!';
+    const callout = `${platformHandle} ${siteUrl}`;
+
+    // Enhanced share text with playful challenge + brand mention
+    const enhancedShareText = `${baseText}\n${challengeLine}\n${callout}`;
 
     let url = '';
     switch (platform) {

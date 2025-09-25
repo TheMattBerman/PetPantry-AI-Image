@@ -20,7 +20,7 @@ async function main() {
 
     const result = await watermarkAndPreferJpeg(buffer, contentType, {
         marginPx: 24,
-        logoWidthRatio: 0.08,
+        logoWidthRatio: 0.22,
         minLogoWidthPx: 64,
     });
 

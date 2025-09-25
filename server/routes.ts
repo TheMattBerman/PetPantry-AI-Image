@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Apply watermark and force JPEG output
               const { buffer: stampedBuffer, extension, contentType, watermarked } = await watermarkAndPreferJpeg(Buffer.from(arrayBuffer), sourceContentType, {
                 marginPx: 24,
-                logoWidthRatio: 0.18,
+                logoWidthRatio: 0.22,
                 minLogoWidthPx: 64,
                 jpegQuality: 90,
               });
