@@ -252,7 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           imageUrlToStore = transformationResult.imageUrl;
         } else if (typeof transformationResult.imageUrl === 'object') {
           // Convert URL-like objects to strings (e.g., URL objects from FileOutput)
-          const urlStr = transformationResult.imageUrl?.toString?.() || String(transformationResult.imageUrl);
+          const maybeAny: any = transformationResult.imageUrl as any;
+          const urlStr = typeof maybeAny === 'string' ? maybeAny : (maybeAny?.toString?.() || String(maybeAny));
           // Only store the converted URL if it looks like a valid HTTP(S) URL
           if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
             imageUrlToStore = urlStr;
@@ -271,24 +272,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (imageUrlToStore && typeof imageUrlToStore === 'string' && process.env.R2_GENERATED_BUCKET) {
           console.log("Watermarking + mirroring generated image to R2:", { source: imageUrlToStore, bucket: process.env.R2_GENERATED_BUCKET });
           const resFetch = await fetch(imageUrlToStore);
+          console.log("Fetch source for watermark:", { ok: resFetch.ok, status: resFetch.status, url: imageUrlToStore });
           if (resFetch.ok) {
             const sourceContentType = resFetch.headers.get('content-type') || 'image/jpeg';
             const arrayBuffer = await resFetch.arrayBuffer();
-            // Apply watermark and force JPEG output
-            const { buffer: stampedBuffer, extension, contentType } = await watermarkAndPreferJpeg(Buffer.from(arrayBuffer), sourceContentType, {
-              marginPx: 24,
-              logoWidthRatio: 0.08,
-              minLogoWidthPx: 64,
-              jpegQuality: 90,
-            });
+            let uploadBuffer = Buffer.from(arrayBuffer);
+            let uploadContentType = sourceContentType;
+            let uploadExt = 'jpg';
+            try {
+              // Apply watermark and force JPEG output
+              const { buffer: stampedBuffer, extension, contentType, watermarked } = await watermarkAndPreferJpeg(Buffer.from(arrayBuffer), sourceContentType, {
+                marginPx: 24,
+                logoWidthRatio: 0.08,
+                minLogoWidthPx: 64,
+                jpegQuality: 90,
+              });
+              console.log("Watermark result:", { watermarked, extension, contentType });
+              uploadBuffer = stampedBuffer;
+              uploadContentType = contentType;
+              uploadExt = extension || 'jpg';
+            } catch (wmErr) {
+              console.error("Watermarking failed; uploading original buffer:", wmErr);
+            }
 
-            const key = makeGeneratedKey({ type: validatedData.theme, resourceId: transformation.id, extension });
-
+            const key = makeGeneratedKey({ type: validatedData.theme, resourceId: transformation.id, extension: uploadExt });
             await uploadBufferToR2({
               bucket: process.env.R2_GENERATED_BUCKET as string,
               key,
-              body: stampedBuffer,
-              contentType,
+              body: uploadBuffer,
+              contentType: uploadContentType,
               cacheControl: 'public, max-age=31536000, immutable',
             });
             console.log("Mirror to R2 successful:", { bucket: process.env.R2_GENERATED_BUCKET, key });
@@ -296,7 +308,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (publicUrl) {
               imageUrlToStore = publicUrl;
               console.log("Using public R2 URL for transformation:", publicUrl);
+            } else {
+              console.warn("Failed to construct public R2 URL; leaving Replicate URL", { key });
             }
+          } else {
+            console.warn("Failed to fetch source image for watermarking", { status: resFetch.status, source: imageUrlToStore });
           }
         }
       } catch (mirrorErr) {
@@ -507,6 +523,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: error instanceof Error ? error.message : "Unknown error"
         });
       }
+    }
+  });
+
+  // Debug endpoint to test watermarking on any image URL (dev use only)
+  app.get("/api/debug/watermark", async (req, res) => {
+    try {
+      const url = req.query.url as string | undefined;
+      if (!url) {
+        return res.status(400).json({ success: false, message: "Missing url query param" });
+      }
+      const r = await fetch(url);
+      if (!r.ok) {
+        return res.status(400).json({ success: false, message: `Failed to fetch source image: ${r.status}` });
+      }
+      const ct = r.headers.get('content-type') || undefined;
+      const ab = await r.arrayBuffer();
+      const { buffer } = await watermarkAndPreferJpeg(Buffer.from(ab), ct, {
+        marginPx: 24,
+        logoWidthRatio: 0.08,
+        minLogoWidthPx: 64,
+        jpegQuality: 90,
+      });
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.send(buffer);
+    } catch (err: any) {
+      console.error("/api/debug/watermark error:", err);
+      return res.status(500).json({ success: false, message: err?.message || 'Watermark failed' });
     }
   });
 

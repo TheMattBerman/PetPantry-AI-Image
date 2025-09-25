@@ -17,23 +17,29 @@ async function resolveImageInput(imageUrl: string): Promise<string> {
     const tempFileId = imageUrl.replace('temp://', '');
     const tempFiles = (global as any).tempFiles || new Map();
     const fileData = tempFiles.get(tempFileId);
-    
+
     if (!fileData) {
       throw new Error('Uploaded file not found or expired');
     }
-    
+
     console.log("Uploading temp file to Replicate...");
     console.log("File buffer size:", fileData.buffer.length, "bytes");
     console.log("File MIME type:", fileData.mimetype);
-    
+
     // Upload the buffer to Replicate and get a URL
     const uploadedFile = await replicate.files.create(fileData.buffer);
     console.log("Replicate upload successful:", uploadedFile.id);
     console.log("Available URLs:", uploadedFile.urls);
-    
-    // Return the uploaded file object directly, or try the get URL
-    // Replicate models can accept file objects directly
-    return uploadedFile.urls.get || uploadedFile;
+
+    // Always return a string URL for downstream consumers
+    if (uploadedFile?.urls?.get && typeof uploadedFile.urls.get === 'string') {
+      return uploadedFile.urls.get as string;
+    }
+    if (typeof (uploadedFile as any)?.url === 'function') {
+      const u = (uploadedFile as any).url();
+      return typeof u === 'string' ? u : u?.toString?.() || String(u);
+    }
+    throw new Error('Failed to obtain URL for uploaded temp file');
   } else {
     // Handle regular HTTP URLs
     return imageUrl;
@@ -78,7 +84,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
   try {
     // Import storage here to avoid circular dependency
     const { storage } = await import("./storage");
-    
+
     // Get the active baseball prompt template from backend
     const template = await storage.getActivePromptTemplate('baseball');
     let basePrompt = template?.basePrompt || `Create a professional baseball card featuring a ${input.petName} pet. 
@@ -88,7 +94,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     ${input.position ? `Position: "${input.position}"` : 'Position: "Good Boy/Girl"'}
     Include realistic pet stats like "Fetch Success Rate", "Treats Consumed", "Naps Per Day".
     Professional sports photography style, high quality, detailed.`;
-    
+
     // Get the best performing variant if available
     if (template) {
       const bestVariant = await storage.getBestPromptVariant(template.id);
@@ -98,7 +104,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
         await storage.updatePromptVariantStats(bestVariant.id, bestVariant.successRate || 0);
       }
     }
-    
+
     // Replace placeholders with actual values - use replaceAll for multiple occurrences
     const prompt = basePrompt
       .replaceAll('{petName}', input.petName)
@@ -115,7 +121,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
     console.log("Image type:", typeof resolvedImage);
     console.log("Image URL:", resolvedImage);
     console.log("=== CALLING REPLICATE ===");
-    
+
     const output = await replicate.run(
       "google/nano-banana",
       {
@@ -126,7 +132,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
         }
       }
     );
-    
+
     // Wait for the prediction to complete if it's a stream/promise
     let finalOutput: any = output;
     if (output && typeof output === 'object' && 'then' in output) {
@@ -168,17 +174,17 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
         success: true,
         imageUrl: finalOutput,
       };
-    } 
-    
+    }
+
     // Handle array responses
     if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
-      
+
       // Handle ReadableStream or other non-string responses
       if (typeof imageUrl !== 'string') {
         console.log("Non-string response detected, type:", typeof imageUrl);
         console.log("Response value:", imageUrl);
-        
+
         // If it's a ReadableStream or URL object, try to extract the actual URL
         if (imageUrl && typeof imageUrl === 'object' && imageUrl.toString) {
           imageUrl = imageUrl.toString();
@@ -190,7 +196,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
           };
         }
       }
-      
+
       console.log("Successfully returning image URL:", imageUrl);
       return {
         success: true,
@@ -213,12 +219,12 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
           imageUrl: finalOutput.images[0],
         };
       }
-      
+
       // Check if it's a FileOutput with url() method
       console.log("Checking FileOutput object properties...");
       console.log("Available methods/properties:", Object.getOwnPropertyNames(finalOutput));
       console.log("Prototype methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(finalOutput)));
-      
+
       // Check if FileOutput has a url property or method
       if (finalOutput.url) {
         if (typeof finalOutput.url === 'function') {
@@ -238,7 +244,7 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
           };
         }
       }
-      
+
       // If no URL method found, try uploading the object as a stream/binary
       console.log("Attempting to upload stream/binary output to Replicate Files...");
       try {
@@ -279,10 +285,10 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
   try {
     // Import storage here to avoid circular dependency
     const { storage } = await import("./storage");
-    
+
     const heroName = input.heroName || `Super ${input.petName}`;
     const powers = input.powers?.join(", ") || "super speed, incredible loyalty, treat detection";
-    
+
     // Get the active superhero prompt template from backend
     const template = await storage.getActivePromptTemplate('superhero');
     let basePrompt = template?.basePrompt || `Create a superhero-style image featuring a {petName} pet as "{heroName}".
@@ -292,7 +298,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     Powers: {powers}
     Dynamic superhero pose, vibrant colors, cape flowing, heroic lighting.
     Professional comic book art style, high quality, detailed.`;
-    
+
     // Get the best performing variant if available
     if (template) {
       const bestVariant = await storage.getBestPromptVariant(template.id);
@@ -302,7 +308,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
         await storage.updatePromptVariantStats(bestVariant.id, bestVariant.successRate || 0);
       }
     }
-    
+
     // Replace placeholders with actual values - use replaceAll for multiple occurrences
     const prompt = basePrompt
       .replaceAll('{petName}', input.petName)
@@ -319,7 +325,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
     console.log("Image type:", typeof resolvedImage);
     console.log("Image URL:", resolvedImage);
     console.log("=== CALLING REPLICATE ===");
-    
+
     const output = await replicate.run(
       "google/nano-banana",
       {
@@ -330,7 +336,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
         }
       }
     );
-    
+
     // Wait for the prediction to complete if it's a stream/promise
     let finalOutput: any = output;
     if (output && typeof output === 'object' && 'then' in output) {
@@ -356,12 +362,12 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
       };
     } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
-      
+
       // Handle ReadableStream or other non-string responses
       if (typeof imageUrl !== 'string') {
         console.log("Non-string response detected, type:", typeof imageUrl);
         console.log("Response value:", imageUrl);
-        
+
         // If it's a ReadableStream or URL object, try to extract the actual URL
         if (imageUrl && typeof imageUrl === 'object' && imageUrl.toString) {
           imageUrl = imageUrl.toString();
@@ -373,7 +379,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
           };
         }
       }
-      
+
       console.log("Successfully returning image URL:", imageUrl);
       return {
         success: true,
@@ -386,7 +392,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
       console.log("Checking FileOutput object properties...");
       console.log("Available methods/properties:", Object.getOwnPropertyNames(finalOutput));
       console.log("Prototype methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(finalOutput)));
-      
+
       // Check if FileOutput has a url property or method
       if (finalOutput.url) {
         if (typeof finalOutput.url === 'function') {
@@ -406,7 +412,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
           };
         }
       }
-      
+
       // Check if FileOutput has a file method or property that gives us a URL
       if (finalOutput.urls && finalOutput.urls.get) {
         console.log("Found URLs object:", finalOutput.urls.get);
@@ -415,7 +421,7 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
           imageUrl: finalOutput.urls.get,
         };
       }
-      
+
       console.log("Attempting to upload stream/binary output to Replicate Files...");
       try {
         const uploadedFile = await replicate.files.create(finalOutput as any);
@@ -465,7 +471,7 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
         }
       }
     );
-    
+
     // Wait for the prediction to complete if it's a stream/promise
     let finalOutput: any = output;
     if (output && typeof output === 'object' && 'then' in output) {
@@ -485,12 +491,12 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
       };
     } else if (Array.isArray(finalOutput) && finalOutput.length > 0) {
       let imageUrl = finalOutput[0];
-      
+
       // Handle ReadableStream or other non-string responses
       if (typeof imageUrl !== 'string') {
         console.log("Non-string response detected, type:", typeof imageUrl);
         console.log("Response value:", imageUrl);
-        
+
         // If it's a ReadableStream or URL object, try to extract the actual URL
         if (imageUrl && typeof imageUrl === 'object' && imageUrl.toString) {
           imageUrl = imageUrl.toString();
@@ -502,7 +508,7 @@ export async function createCustomPromptImage(input: CustomPromptInput): Promise
           };
         }
       }
-      
+
       console.log("Successfully returning custom prompt image URL:", imageUrl);
       return {
         success: true,

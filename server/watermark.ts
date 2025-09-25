@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 
 export type WatermarkOptions = {
     logoPath?: string;
@@ -15,9 +16,33 @@ export type WatermarkResult = {
     watermarked: boolean;
 };
 
-function getDefaultLogoPath(): string {
-    return process.env.WATERMARK_LOGO_PATH ||
-        "/home/runner/workspace/client/public/images/the-pet-pantry-logo.png";
+async function resolveLogoPath(): Promise<string> {
+    if (process.env.WATERMARK_LOGO_PATH) {
+        return process.env.WATERMARK_LOGO_PATH;
+    }
+    // Prefer white logo if present, fallback to color
+    const candidates = [
+        "/home/runner/workspace/client/public/images/the-pet-pantry-logo-white.png",
+        "/home/runner/workspace/client/public/images/the-pet-pantry-logo.png",
+    ];
+    for (const p of candidates) {
+        try {
+            await fs.access(p);
+            return p;
+        } catch { }
+    }
+    // Last resort: relative fallbacks
+    const relCandidates = [
+        path.resolve(process.cwd(), "client/public/images/the-pet-pantry-logo-white.png"),
+        path.resolve(process.cwd(), "client/public/images/the-pet-pantry-logo.png"),
+    ];
+    for (const p of relCandidates) {
+        try {
+            await fs.access(p);
+            return p;
+        } catch { }
+    }
+    throw new Error("Watermark logo not found. Set WATERMARK_LOGO_PATH or place a logo PNG under client/public/images/");
 }
 
 async function tryImportSharp(): Promise<any | null> {
@@ -51,6 +76,7 @@ export async function watermarkAndPreferJpeg(
 ): Promise<WatermarkResult> {
     const sharpLib = await tryImportSharp();
     if (!sharpLib) {
+        console.warn("[watermark] Sharp not available; skipping watermark and JPEG conversion");
         return {
             buffer: inputBuffer,
             contentType: sourceContentType || "application/octet-stream",
@@ -74,12 +100,14 @@ export async function watermarkAndPreferJpeg(
 
     // If we can't read dimensions, just convert to JPEG without watermark
     if (!baseWidth || !baseHeight) {
+        console.warn("[watermark] Unable to read base image dimensions; converting to JPEG without watermark");
         const buffer = await base.jpeg({ quality: jpegQuality, chromaSubsampling: "4:4:4" }).toBuffer();
         return { buffer, contentType: "image/jpeg", extension: "jpg", watermarked: false };
     }
 
     // Load and resize the logo
-    const logoPath = options.logoPath || getDefaultLogoPath();
+    const logoPath = options.logoPath || await resolveLogoPath();
+    console.log("[watermark] Using logo path:", logoPath);
     const logoFile = await fs.readFile(logoPath);
 
     const targetLogoWidth = Math.max(minLogoWidthPx, Math.round(baseWidth * logoWidthRatio));
