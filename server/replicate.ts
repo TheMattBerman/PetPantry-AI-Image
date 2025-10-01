@@ -1,11 +1,11 @@
 import Replicate from "replicate";
 
 if (!process.env.REPLICATE_API_TOKEN) {
-  throw new Error("REPLICATE_API_TOKEN environment variable is required");
+  console.warn("Warning: REPLICATE_API_TOKEN environment variable is not set. Image generation features will not work.");
 }
 
 export const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
+  auth: process.env.REPLICATE_API_TOKEN || 'dummy-key-for-startup',
 });
 
 /**

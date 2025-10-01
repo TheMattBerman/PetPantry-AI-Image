@@ -13,7 +13,7 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 // Using GPT-4o-mini as requested by user (they mentioned "GPT-5 mini" but this is the latest efficient model)
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-startup' });
 
 export interface PromptEnhancementResult {
   success: boolean;
