@@ -9,6 +9,11 @@ import { watermarkAndPreferJpeg } from "./watermark";
 import { createBaseballCard, createSuperheroImage, generateBaseballStats, createCustomPromptImage } from "./replicate";
 import { enhancePrompt, generatePromptSuggestions, generatePetDescription, generatePersonaStats } from "./openai";
 
+const visitIncrementSchema = z.object({
+  transformsDelta: z.number().min(1).max(50).default(5),
+  sharesDelta: z.number().min(1).max(200).default(15),
+});
+
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -104,13 +109,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get app statistics (mock data for now)
-  app.get("/api/stats", (req, res) => {
-    res.json({
-      totalUsers: 25847,
-      totalShares: 89234,
-      totalTransformations: 42156,
-    });
+  // Get site-wide metrics
+  app.get("/api/stats", async (req, res) => {
+    try {
+      const metrics = await storage.getSiteMetrics();
+      res.json({
+        success: true,
+        metrics,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to load site metrics",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  // Increment metrics for a visit
+  app.post("/api/stats/visit", async (req, res) => {
+    try {
+      const body = visitIncrementSchema.parse(req.body ?? {});
+      const metrics = await storage.incrementSiteMetrics({
+        transforms: body.transformsDelta,
+        shares: body.sharesDelta,
+      });
+      res.json({ success: true, metrics });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid metrics payload",
+          errors: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        message: "Failed to update site metrics",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   });
 
   // File upload endpoint

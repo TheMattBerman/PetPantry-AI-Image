@@ -24,6 +24,13 @@ export const petTransformations = pgTable("pet_transformations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const siteMetrics = pgTable("site_metrics", {
+  id: text("id").primaryKey().default("global"),
+  transforms: integer("transforms").notNull().default(128),
+  shares: integer("shares").notNull().default(340),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -42,6 +49,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertPetTransformation = z.infer<typeof insertPetTransformationSchema>;
 export type PetTransformation = typeof petTransformations.$inferSelect;
+export type SiteMetrics = typeof siteMetrics.$inferSelect;
 
 // Backend prompt optimization system
 export const promptTemplates = pgTable("prompt_templates", {

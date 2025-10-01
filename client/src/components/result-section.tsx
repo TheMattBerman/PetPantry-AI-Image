@@ -1,9 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, Facebook, Twitter, Instagram, Link2, Trophy, Users, Plus, Heart, Share2, Download as DownloadIcon, Star, Zap, Award, Target } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import SuccessModal from "@/components/success-modal";
+import { Download, Facebook, Twitter, Instagram, Link2, Trophy, Users, Plus, Heart, Share, Share2, Download as DownloadIcon, Star, Zap, Award, Target, MessageCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { TransformationResult, PetData, Theme, PersonaContent } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+type ShareCapableNavigator = Navigator & {
+  share?: (data: ShareData) => Promise<void>;
+  canShare?: (data: ShareData) => boolean;
+};
 
 interface ResultSectionProps {
   transformationResult: TransformationResult;
@@ -17,6 +34,40 @@ export default function ResultSection({ transformationResult, petData, selectedT
   const { toast } = useToast();
   const [persona, setPersona] = useState<PersonaContent | null>(null);
   const [loadingPersona, setLoadingPersona] = useState(false);
+  const [nativeShareAvailable, setNativeShareAvailable] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
+  const [smsPhoneNumber, setSmsPhoneNumber] = useState("");
+  const [smsError, setSmsError] = useState<string | null>(null);
+  const [isDownloadPending, setIsDownloadPending] = useState(false);
+  const [isDownloadRecorded, setIsDownloadRecorded] = useState(false);
+  const [isShareRecording, setIsShareRecording] = useState(false);
+
+  const SHARE_SITE_URL = 'https://transform.thepetpantry.com';
+
+  const platformHandles: Record<string, string> = {
+    facebook: '@FeedYourPetscom',
+    twitter: '@FeedYourPetsCom',
+    instagram: '@thepetpantrync',
+    default: '@thepetpantrync',
+  };
+
+  const buildShareCaption = (platform?: string) => {
+    const platformHandle = platformHandles[platform ?? 'default'] || platformHandles.default;
+    const themeHighlight = selectedTheme === 'baseball' ? 'a legendary baseball all-star ⚾' : 'an epic superhero 🦸‍♂️';
+    const baseText = `🎉 Meet ${petData.name}! Now ${themeHighlight}!`;
+    const challengeLine = 'I dare you to make your pet a legend!';
+    const callout = `${platformHandle} ${SHARE_SITE_URL}`;
+    const caption = `${baseText}\n${challengeLine}\n${callout}`;
+
+    return {
+      caption,
+      platformHandle,
+      baseText,
+      challengeLine,
+      callout,
+    };
+  };
 
   // Fetch persona stats/content from backend; fallback to local copy if unavailable
   useEffect(() => {
@@ -44,7 +95,43 @@ export default function ResultSection({ transformationResult, petData, selectedT
       }
     };
     fetchPersona();
-  }, [petData.name, petData.breed, JSON.stringify(petData.traits), selectedTheme]);
+  }, [petData.name, petData.breed, selectedTheme, JSON.stringify(petData.traits)]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const nav = window.navigator as ShareCapableNavigator;
+    if (typeof nav.share === 'function') {
+      setNativeShareAvailable(true);
+    }
+  }, []);
+
+  const validatePhoneNumber = (value: string) => {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return null;
+    }
+
+    const normalized = trimmed.replace(/[^0-9+]/g, '');
+    const e164Regex = /^\+?[1-9]\d{7,14}$/;
+
+    if (!e164Regex.test(normalized)) {
+      return 'Use format like +12345556789';
+    }
+
+    return null;
+  };
+
+  const smsMessage = useMemo(() => {
+    const { caption } = buildShareCaption();
+    if (typeof window === 'undefined') {
+      return caption;
+    }
+    return `${caption}\n\nCreate your pet's transformation here: ${window.location.href}`;
+  }, [buildShareCaption]);
 
   // Local fallback content
   const generateFunFacts = () => {
@@ -144,6 +231,28 @@ export default function ResultSection({ transformationResult, petData, selectedT
     }
     : generateFunFacts();
 
+  const recordShare = useCallback(async () => {
+    if (isShareRecording || !transformationResult?.id) {
+      return;
+    }
+
+    try {
+      setIsShareRecording(true);
+      const response = await fetch(`/api/transformations/${transformationResult.id}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to record share: ${response.status}`);
+      }
+    } catch (error) {
+      console.warn('Failed to record share', error);
+    } finally {
+      setIsShareRecording(false);
+    }
+  }, [isShareRecording, transformationResult?.id]);
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -151,6 +260,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
         title: "Link copied!",
         description: "Share link has been copied to your clipboard.",
       });
+      await recordShare();
     } catch (err) {
       toast({
         title: "Failed to copy",
@@ -162,24 +272,9 @@ export default function ResultSection({ transformationResult, petData, selectedT
 
   const handleSocialShare = async (platform: string) => {
     const shareUrl = window.location.href;
-    const siteUrl = 'https://transform.thepetpantry.com';
     const imageUrl = transformationResult.transformedImageUrl;
 
-    const platformHandles: Record<string, string> = {
-      facebook: '@FeedYourPetscom',
-      twitter: '@FeedYourPetsCom',
-      instagram: '@thepetpantrync',
-      default: '@thepetpantrync',
-    };
-
-    const platformHandle = platformHandles[platform] || platformHandles.default;
-    const themeHighlight = selectedTheme === 'baseball' ? 'a legendary baseball all-star ⚾' : 'an epic superhero 🦸‍♂️';
-    const baseText = `🎉 Meet ${petData.name}! Now ${themeHighlight}!`;
-    const challengeLine = 'I dare you to make your pet a legend!';
-    const callout = `${platformHandle} ${siteUrl}`;
-
-    // Enhanced share text with playful challenge + brand mention
-    const enhancedShareText = `${baseText}\n${challengeLine}\n${callout}`;
+    const { caption: enhancedShareText } = buildShareCaption(platform);
 
     let url = '';
     switch (platform) {
@@ -211,24 +306,28 @@ export default function ResultSection({ transformationResult, petData, selectedT
         // Special case for downloading image with share text
         try {
           await navigator.clipboard.writeText(enhancedShareText);
-          // Trigger download
+        } catch (err) {
+          toast({
+            title: "Caption copy failed",
+            description: "We'll still download the image for you.",
+            variant: "destructive",
+          });
+        }
+
+        if (imageUrl) {
           const link = document.createElement('a');
           link.href = imageUrl;
           link.download = `${petData.name}-${selectedTheme}-transformation.jpg`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-
-          toast({
-            title: "Download & Share Ready!",
-            description: "Image downloaded and share text copied to clipboard!",
-          });
-        } catch (err) {
-          toast({
-            title: "Download started",
-            description: "Your image is downloading now.",
-          });
         }
+
+        toast({
+          title: "Download & Share Ready!",
+          description: "Image downloaded. Caption copied if your browser allowed it.",
+        });
+        await recordShare();
         return;
     }
 
@@ -238,7 +337,166 @@ export default function ResultSection({ transformationResult, petData, selectedT
         title: "Share window opened!",
         description: "Your post will include the image and branded caption.",
       });
+      await recordShare();
     }
+  };
+
+  const handleNativeShare = async () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const nav = window.navigator as ShareCapableNavigator;
+
+    if (typeof nav.share !== 'function') {
+      toast({
+        title: "Share sheet unavailable",
+        description: "Your device browser doesn't support native sharing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { caption } = buildShareCaption();
+    const shareTitle = `${petData.name} is a legend!`;
+    const imageUrl = transformationResult.transformedImageUrl;
+
+    let files: File[] | undefined;
+
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch image for sharing');
+      }
+      const blob = await response.blob();
+
+      if (blob.size > 0) {
+        const fileType = blob.type || 'image/jpeg';
+        const extension = fileType.includes('/') ? fileType.split('/')[1] : 'jpg';
+        const fileName = `${petData.name}-${selectedTheme}-legend.${extension}`;
+        const candidateFiles = [new File([blob], fileName, { type: fileType })];
+
+        if (!nav.canShare || nav.canShare({ files: candidateFiles })) {
+          files = candidateFiles;
+        }
+      }
+    } catch {
+      files = undefined;
+    }
+
+    try {
+      await nav.share(
+        files
+          ? { title: shareTitle, text: caption, files }
+          : { title: shareTitle, text: caption }
+      );
+
+      toast({
+        title: "Share sheet opened!",
+        description: files
+          ? "Your device is ready to share the image and caption."
+          : "Your device is ready to share the caption.",
+      });
+      await recordShare();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(caption);
+        toast({
+          title: "Copied caption instead",
+          description: "Native share failed. Caption copied to your clipboard.",
+        });
+        await recordShare();
+      } catch {
+        toast({
+          title: "Sharing failed",
+          description: "We couldn't open the share sheet on this device.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleDownloadHighRes = async () => {
+    if (isDownloadPending || isDownloadRecorded) {
+      setIsSuccessModalOpen(true);
+      return;
+    }
+
+    if (!transformationResult?.id) {
+      toast({
+        title: "Missing transformation",
+        description: "Please refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsDownloadPending(true);
+      const response = await fetch('/api/email-capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          transformationId: transformationResult.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Email capture failed: ${response.status}`);
+      }
+
+      setIsDownloadRecorded(true);
+      setIsSuccessModalOpen(true);
+      toast({
+        title: "Download started",
+        description: "Check your inbox for the high-res image!",
+      });
+    } catch (error) {
+      console.error('Failed to trigger email capture', error);
+      toast({
+        title: "Download failed",
+        description: "We couldn't send the high-res image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadPending(false);
+    }
+  };
+
+  const handleSmsShare = async () => {
+    const copyMessageToClipboard = async () => {
+      try {
+        await navigator.clipboard.writeText(smsMessage);
+        toast({
+          title: "Text ready!",
+          description: "Message copied. Paste it into your SMS app.",
+        });
+        await recordShare();
+        setIsSmsDialogOpen(false);
+      } catch (error) {
+        console.error('Failed to copy SMS message', error);
+        toast({
+          title: "Copy failed",
+          description: "We couldn't copy the message. Try manually copying it.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (smsPhoneNumber.trim()) {
+      const validationError = validatePhoneNumber(smsPhoneNumber);
+      if (validationError) {
+        setSmsError(validationError);
+        return;
+      }
+    }
+
+    await copyMessageToClipboard();
   };
 
   return (
@@ -365,13 +623,20 @@ export default function ResultSection({ transformationResult, petData, selectedT
                   </p>
                   <Button
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    onClick={() => toast({
-                      title: "Download Starting",
-                      description: "Your high-resolution image is downloading now.",
-                    })}
+                    onClick={handleDownloadHighRes}
+                    disabled={isDownloadPending}
                   >
-                    <Download className="mr-2 w-4 h-4" />
-                    Download High-Res Image
+                    {isDownloadPending ? (
+                      <>
+                        <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                        Sending to your email…
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 w-4 h-4" />
+                        Download High-Res Image
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -403,6 +668,15 @@ export default function ResultSection({ transformationResult, petData, selectedT
                 These buttons will pre-load your image and caption for easy sharing
               </p>
               <div className="grid grid-cols-2 gap-3">
+                {nativeShareAvailable && (
+                  <Button
+                    onClick={handleNativeShare}
+                    className="bg-brand-primary text-white hover:bg-brand-primary/90"
+                  >
+                    <Share className="w-4 h-4 mr-2" />
+                    Share via Device
+                  </Button>
+                )}
                 <Button
                   onClick={() => handleSocialShare('facebook')}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -445,7 +719,15 @@ export default function ResultSection({ transformationResult, petData, selectedT
                 <p className="text-sm text-gray-600 mb-3">
                   Think your pet is the cutest? Challenge 3 friends to create their pet's card and see who gets the most shares!
                 </p>
-                <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-green-600 hover:text-green-700"
+                  onClick={() => {
+                    setSmsError(null);
+                    setIsSmsDialogOpen(true);
+                  }}
+                >
                   <Users className="mr-1 w-4 h-4" />
                   Send Challenge
                 </Button>
@@ -467,6 +749,74 @@ export default function ResultSection({ transformationResult, petData, selectedT
           </Button>
         </div>
       </div>
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+      />
+
+      <Dialog open={isSmsDialogOpen} onOpenChange={setIsSmsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Challenge Your Friends</DialogTitle>
+            <DialogDescription>
+              Copy this text and send it via SMS to invite your friends to transform their pets.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="smsPhone" className="text-sm font-medium text-gray-700">
+                Friend's phone (optional)
+              </Label>
+              <Input
+                id="smsPhone"
+                placeholder="+12345556789"
+                value={smsPhoneNumber}
+                onChange={(event) => {
+                  setSmsError(null);
+                  setSmsPhoneNumber(event.target.value);
+                }}
+                aria-invalid={Boolean(smsError)}
+              />
+              {smsError && (
+                <p className="text-xs text-red-500 mt-1">{smsError}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="smsMessage" className="text-sm font-medium text-gray-700">
+                Message preview
+              </Label>
+              <Textarea id="smsMessage" value={smsMessage} readOnly className="text-sm" rows={4} />
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button
+              variant="secondary"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(smsMessage);
+                  toast({
+                    title: "Message copied",
+                    description: "Paste it into your SMS app.",
+                  });
+                } catch (error) {
+                  toast({
+                    title: "Copy failed",
+                    description: "We couldn't copy the message automatically.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Copy Message
+            </Button>
+            <Button onClick={handleSmsShare}>
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Ready to Text
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

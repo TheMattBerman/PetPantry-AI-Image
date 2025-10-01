@@ -19,6 +19,13 @@ export interface TransformationResult {
   };
 }
 
+export interface SiteMetrics {
+  id: string;
+  transforms: number;
+  shares: number;
+  updatedAt: string;
+}
+
 export interface PersonaStatItem {
   label: string;
   value: number | string;

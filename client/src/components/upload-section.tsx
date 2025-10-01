@@ -36,7 +36,7 @@ export default function UploadSection({ onFileUploaded, uploadedFile }: UploadSe
 
   const handleFileUpload = (file: File) => {
     setError(null);
-    
+
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
@@ -96,9 +96,8 @@ export default function UploadSection({ onFileUploaded, uploadedFile }: UploadSe
 
         {/* Upload Zone */}
         <div
-          className={`upload-zone rounded-lg p-8 text-center cursor-pointer mb-4 ${
-            isDragOver ? 'dragover' : ''
-          }`}
+          className={`upload-zone rounded-lg p-8 text-center cursor-pointer mb-4 ${isDragOver ? 'dragover' : ''
+            }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -141,6 +140,10 @@ export default function UploadSection({ onFileUploaded, uploadedFile }: UploadSe
           className="hidden"
           onChange={handleFileInputChange}
         />
+
+        <p className="text-xs text-gray-500 text-center mb-6">
+          By uploading, you agree to The Pet Pantry using your pet photo in marketing materials.
+        </p>
 
         {/* Error Messages */}
         {error && (

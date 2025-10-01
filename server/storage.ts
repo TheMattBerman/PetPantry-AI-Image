@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type PetTransformation, type InsertPetTransformation, type PromptTemplateInsert, type PromptTemplateSelect, type PromptVariantInsert, type PromptVariantSelect, users, petTransformations, promptTemplates, promptVariants } from "@shared/schema";
+import { type User, type InsertUser, type PetTransformation, type InsertPetTransformation, type PromptTemplateInsert, type PromptTemplateSelect, type PromptVariantInsert, type PromptVariantSelect, type SiteMetrics, users, petTransformations, promptTemplates, promptVariants, siteMetrics } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -8,13 +8,17 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Pet transformation methods
   getPetTransformation(id: string): Promise<PetTransformation | undefined>;
   createPetTransformation(transformation: InsertPetTransformation): Promise<PetTransformation>;
   updatePetTransformation(id: string, updates: Partial<PetTransformation>): Promise<PetTransformation | undefined>;
   updatePetTransformationStats(id: string, stats: { likes: number; shares: number; downloads: number }): Promise<void>;
   getUserTransformations(userId: string): Promise<PetTransformation[]>;
+
+  // Site metrics methods
+  getSiteMetrics(): Promise<SiteMetrics>;
+  incrementSiteMetrics(updates: { transforms?: number; shares?: number }): Promise<SiteMetrics>;
 
   // Backend prompt optimization methods
   getActivePromptTemplate(category: string): Promise<PromptTemplateSelect | undefined>;
@@ -80,16 +84,62 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(petTransformations).where(eq(petTransformations.userId, userId));
   }
 
+  async getSiteMetrics(): Promise<SiteMetrics> {
+    const [metrics] = await db.select().from(siteMetrics).limit(1);
+
+    if (metrics) {
+      return metrics;
+    }
+
+    const [created] = await db
+      .insert(siteMetrics)
+      .values({ id: "global" })
+      .onConflictDoNothing()
+      .returning();
+
+    if (created) {
+      return created;
+    }
+
+    const [retried] = await db.select().from(siteMetrics).limit(1);
+    if (!retried) {
+      throw new Error("Failed to initialize site metrics");
+    }
+    return retried;
+  }
+
+  async incrementSiteMetrics(updates: { transforms?: number; shares?: number }): Promise<SiteMetrics> {
+    const { transforms = 0, shares = 0 } = updates;
+
+    const result = await db
+      .update(siteMetrics)
+      .set({
+        transforms: sql`${siteMetrics.transforms} + ${transforms}`,
+        shares: sql`${siteMetrics.shares} + ${shares}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(siteMetrics.id, "global"))
+      .returning();
+
+    if (result.length) {
+      return result[0];
+    }
+
+    await this.getSiteMetrics();
+
+    return this.incrementSiteMetrics(updates);
+  }
+
   // Backend prompt optimization methods
   async getActivePromptTemplate(category: string): Promise<PromptTemplateSelect | undefined> {
     // Get all active templates for the category
     const templates = await db.select().from(promptTemplates)
       .where(and(eq(promptTemplates.category, category), eq(promptTemplates.isActive, true)));
-    
+
     if (templates.length === 0) {
       return undefined;
     }
-    
+
     // Randomly select one template to provide variety
     const randomIndex = Math.floor(Math.random() * templates.length);
     return templates[randomIndex];
@@ -133,7 +183,7 @@ export class DatabaseStorage implements IStorage {
 
   async updatePromptVariantStats(id: number, successRate: number): Promise<void> {
     await db.update(promptVariants)
-      .set({ 
+      .set({
         successRate,
         timesUsed: sql`${promptVariants.timesUsed} + 1`
       })
