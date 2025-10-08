@@ -8,6 +8,7 @@ import { insertUserSchema, insertPetTransformationSchema, promptTemplateSchema, 
 import { watermarkAndPreferJpeg } from "./watermark";
 import { createBaseballCard, createSuperheroImage, generateBaseballStats, createCustomPromptImage } from "./replicate";
 import { enhancePrompt, generatePromptSuggestions, generatePetDescription, generatePersonaStats } from "./openai";
+import { trackDownloadInDrip } from "./drip";
 
 const visitIncrementSchema = z.object({
   transformsDelta: z.number().min(1).max(50).default(5),
@@ -399,23 +400,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Update transformation stats (increment downloads)
+      // Update transformation stats (increment downloads) and fetch transformation details
       const transformation = await storage.getPetTransformation(validatedData.transformationId);
+      let transformedImageUrl: string | null = null;
       if (transformation) {
         const currentStats = transformation.stats || { likes: 0, shares: 0, downloads: 0 };
         await storage.updatePetTransformationStats(validatedData.transformationId, {
           ...currentStats,
           downloads: currentStats.downloads + 1,
         });
+        transformedImageUrl = transformation.transformedImageUrl || null;
       }
 
-      // Mock email sending (in real app, integrate with email service)
-      console.log(`Sending high-res image to: ${validatedData.email}`);
+      // Kick off Drip workflow
+      await trackDownloadInDrip({
+        email: validatedData.email,
+        transformationId: validatedData.transformationId,
+        imageUrl: transformedImageUrl,
+        userId: user?.id,
+      });
 
       res.json({
         success: true,
-        message: "High-resolution image sent to your email",
+        message: "Download flow triggered",
         userId: user.id,
+        imageUrl: transformedImageUrl,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

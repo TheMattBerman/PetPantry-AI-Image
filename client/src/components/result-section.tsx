@@ -42,6 +42,8 @@ export default function ResultSection({ transformationResult, petData, selectedT
   const [isDownloadPending, setIsDownloadPending] = useState(false);
   const [isDownloadRecorded, setIsDownloadRecorded] = useState(false);
   const [isShareRecording, setIsShareRecording] = useState(false);
+  const [directDownloadUrl, setDirectDownloadUrl] = useState<string | null>(null);
+  const [directDownloadError, setDirectDownloadError] = useState<string | null>(null);
 
   const SHARE_SITE_URL = 'https://transform.thepetpantry.com';
 
@@ -420,8 +422,21 @@ export default function ResultSection({ transformationResult, petData, selectedT
     }
   };
 
+  const triggerDirectDownload = (url: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    const suffix = url.split('.').pop()?.split('?')[0] || 'jpg';
+    link.download = `${petData.name}-${selectedTheme}-high-res.${suffix}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleDownloadHighRes = async () => {
     if (isDownloadPending || isDownloadRecorded) {
+      if (directDownloadUrl) {
+        triggerDirectDownload(directDownloadUrl);
+      }
       setIsSuccessModalOpen(true);
       return;
     }
@@ -437,6 +452,8 @@ export default function ResultSection({ transformationResult, petData, selectedT
 
     try {
       setIsDownloadPending(true);
+      setDirectDownloadError(null);
+
       const response = await fetch('/api/email-capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -450,6 +467,12 @@ export default function ResultSection({ transformationResult, petData, selectedT
         throw new Error(`Email capture failed: ${response.status}`);
       }
 
+      const data = await response.json();
+      if (data?.imageUrl) {
+        setDirectDownloadUrl(data.imageUrl);
+        triggerDirectDownload(data.imageUrl);
+      }
+
       setIsDownloadRecorded(true);
       setIsSuccessModalOpen(true);
       toast({
@@ -458,6 +481,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
       });
     } catch (error) {
       console.error('Failed to trigger email capture', error);
+      setDirectDownloadError('We could not start the download automatically. Please try again later.');
       toast({
         title: "Download failed",
         description: "We couldn't send the high-res image. Please try again.",
@@ -621,6 +645,11 @@ export default function ResultSection({ transformationResult, petData, selectedT
                   <p className="text-sm text-gray-600 mb-4">
                     High-resolution version sent to: <strong>{userEmail}</strong>
                   </p>
+                  {directDownloadError && (
+                    <p className="text-xs text-red-500 mb-4">
+                      {directDownloadError}
+                    </p>
+                  )}
                   <Button
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                     onClick={handleDownloadHighRes}
@@ -752,6 +781,9 @@ export default function ResultSection({ transformationResult, petData, selectedT
       <SuccessModal
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
+        downloadUrl={directDownloadUrl}
+        onDownload={directDownloadUrl ? () => triggerDirectDownload(directDownloadUrl) : undefined}
+        downloadError={directDownloadError}
       />
 
       <Dialog open={isSmsDialogOpen} onOpenChange={setIsSmsDialogOpen}>
