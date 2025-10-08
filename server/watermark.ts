@@ -175,7 +175,7 @@ export async function watermarkAndPreferJpeg(
     }
 
     const sharp = sharpLib as any;
-    const sharpFactory = (buffer: Buffer) => sharp(buffer);
+    const sharpFactory = (buffer: Buffer) => sharp(buffer, { failOn: 'none' });
 
     const marginPx = Math.max(0, options.marginPx ?? 24);
     const logoWidthRatio = options.logoWidthRatio ?? 0.22;
