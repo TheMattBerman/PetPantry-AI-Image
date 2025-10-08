@@ -16,7 +16,7 @@ const petSchema = z.object({
   name: z.string().min(1, "Pet name is required"),
   breed: z.string().optional(),
   traits: z.array(z.string()).max(3, "Please select up to 3 traits"),
-  gender: z.enum(['male', 'female'], {
+  gender: z.enum(['male', 'female', 'neutral'], {
     required_error: 'Please select a gender',
   }),
 });
@@ -301,6 +301,21 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                         <div>
                           <span className="font-semibold text-gray-800 text-lg">Female</span>
                           <p className="text-sm text-gray-500">Fierce heroine energy</p>
+                        </div>
+                      </div>
+                    </Label>
+                    <Label
+                      htmlFor="gender-neutral"
+                      className={`flex-1 border-2 rounded-xl p-4 cursor-pointer transition-all ${field.value === 'neutral'
+                        ? 'border-brand-accent bg-brand-accent/5 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-brand-accent/50 hover:bg-brand-accent/5'
+                        }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <RadioGroupItem id="gender-neutral" value="neutral" className="mt-0.5" data-testid="radio-gender-neutral" />
+                        <div>
+                          <span className="font-semibold text-gray-800 text-lg">Neutral</span>
+                          <p className="text-sm text-gray-500">Unique champion spirit</p>
                         </div>
                       </div>
                     </Label>

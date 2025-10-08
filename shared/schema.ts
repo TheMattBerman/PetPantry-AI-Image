@@ -38,6 +38,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export const insertPetTransformationSchema = createInsertSchema(petTransformations, {
   traits: z.array(z.string()).default([]),
+  gender: z.enum(['male', 'female', 'neutral']).optional(),
 }).omit({
   id: true,
   createdAt: true,

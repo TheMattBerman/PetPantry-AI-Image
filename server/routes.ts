@@ -252,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           petImageUrl: transformation.originalImageUrl || "",
           petName: validatedData.petName,
           petBreed: validatedData.petBreed || 'pet',
-          gender: validatedData.gender,
+          gender: validatedData.gender || undefined,
           team: "Pet Pantry All-Stars",
           position: "Good Boy/Girl",
           stats: stats,
@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           petImageUrl: transformation.originalImageUrl || "",
           petName: validatedData.petName,
           petBreed: validatedData.petBreed || 'pet',
-          gender: validatedData.gender,
+          gender: validatedData.gender || undefined,
           heroName: `Super ${validatedData.petName}`,
           powers: (validatedData.traits as string[]) || ["loyalty", "cuteness", "treat detection"],
         });
