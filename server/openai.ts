@@ -159,6 +159,7 @@ Return JSON only.`;
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
+      reasoning_effort: "minimal" as any, // Use minimal reasoning for simple JSON generation tasks
       max_completion_tokens: 5000,
     });
 
