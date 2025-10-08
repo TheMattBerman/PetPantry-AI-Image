@@ -152,6 +152,8 @@ Schema fields and max lengths:
 
 Return JSON only.`;
 
+    console.log('[PERSONA STATS] Making OpenAI API call with model: gpt-5-mini');
+    
     const response = await openai.chat.completions.create({
       model: "gpt-5-mini", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
       messages: [
@@ -162,11 +164,30 @@ Return JSON only.`;
       max_completion_tokens: 700,
     });
 
+    console.log('[PERSONA STATS] Response received:', {
+      id: response.id,
+      model: response.model,
+      choices_length: response.choices?.length,
+      finish_reason: response.choices?.[0]?.finish_reason,
+      has_content: !!response.choices?.[0]?.message?.content
+    });
+
     const raw = response.choices?.[0]?.message?.content || '{}';
+    console.log('[PERSONA STATS] Raw content:', raw);
+    
     const parsed = JSON.parse(raw);
+    console.log('[PERSONA STATS] Parsed JSON:', JSON.stringify(parsed, null, 2));
+    console.log('[PERSONA STATS] Validation checks:', {
+      is_object: typeof parsed === 'object',
+      is_truthy: !!parsed,
+      has_stats: 'stats' in parsed,
+      stats_is_array: Array.isArray(parsed.stats),
+      stats_length: parsed.stats?.length
+    });
 
     // Light shape validation
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.stats)) {
+      console.error('[PERSONA STATS] Validation failed - invalid persona content structure');
       throw new Error('Invalid persona content');
     }
 
