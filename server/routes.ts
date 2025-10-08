@@ -331,8 +331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const { buffer: stampedBuffer, extension, contentType, watermarked, metadata } = await watermarkAndPreferJpeg(Buffer.from(arrayBuffer), sourceContentType, {
                 marginPx: Number(process.env.WATERMARK_MARGIN_PX ?? 32),
-                logoWidthRatio: Number(process.env.WATERMARK_LOGO_WIDTH_RATIO ?? 0.18),
-                minLogoWidthPx: Number(process.env.WATERMARK_MIN_LOGO_PX ?? 48),
+                logoWidthRatio: Number(process.env.WATERMARK_LOGO_WIDTH_RATIO ?? 0.25),
+                minLogoWidthPx: Number(process.env.WATERMARK_MIN_LOGO_PX ?? 80),
                 jpegQuality: Number(process.env.WATERMARK_JPEG_QUALITY ?? 90),
                 forcePosition: process.env.WATERMARK_FORCE_POSITION as any,
                 fallbackPosition: (process.env.WATERMARK_FALLBACK_POSITION as any) || "bottom-right",
