@@ -18,6 +18,13 @@ async function main() {
     const contentType = res.headers.get("content-type") || undefined;
     const buffer = Buffer.from(await res.arrayBuffer());
 
+    const candidatePositionsEnv = process.env.WATERMARK_CANDIDATE_POSITIONS;
+    const candidatePositions = candidatePositionsEnv
+        ? candidatePositionsEnv.split(",").map(p => p.trim()).filter(Boolean)
+        : undefined;
+    const autoPlacementEnv = process.env.WATERMARK_AUTO_PLACEMENT;
+    const autoPlacement = autoPlacementEnv === undefined ? true : autoPlacementEnv !== "false";
+
     const result = await watermarkAndPreferJpeg(buffer, contentType, {
         marginPx: Number(process.env.WATERMARK_MARGIN_PX ?? 32),
         logoWidthRatio: Number(process.env.WATERMARK_LOGO_WIDTH_RATIO ?? 0.18),
@@ -25,8 +32,8 @@ async function main() {
         jpegQuality: Number(process.env.WATERMARK_JPEG_QUALITY ?? 90),
         forcePosition: process.env.WATERMARK_FORCE_POSITION as any,
         fallbackPosition: (process.env.WATERMARK_FALLBACK_POSITION as any) || "bottom-right",
-        candidatePositions: process.env.WATERMARK_CANDIDATE_POSITIONS?.split(",").map(p => p.trim()).filter(Boolean) as any,
-        autoPlacement: process.env.WATERMARK_AUTO_PLACEMENT === "false" ? false : true,
+        candidatePositions: candidatePositions as any,
+        autoPlacement,
     });
 
     const outPath = "/home/runner/workspace/tmp-watermark-debug.jpg";

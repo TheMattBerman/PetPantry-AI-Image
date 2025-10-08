@@ -92,19 +92,23 @@ function getPositionCoordinates(
     marginPx: number
 ) {
     const safeMargin = Math.max(0, Math.round(marginPx));
-    const horizontalMax = Math.max(0, baseWidth - overlayWidth - safeMargin);
-    const verticalMax = Math.max(0, baseHeight - overlayHeight - safeMargin);
+    const maxLeft = Math.max(0, baseWidth - overlayWidth);
+    const maxTop = Math.max(0, baseHeight - overlayHeight);
+    const rightAlignedLeft = Math.max(0, baseWidth - overlayWidth - safeMargin);
+    const bottomAlignedTop = Math.max(0, baseHeight - overlayHeight - safeMargin);
+    const leftAlignedLeft = Math.min(safeMargin, maxLeft);
+    const topAlignedTop = Math.min(safeMargin, maxTop);
 
     switch (position) {
         case "top-left":
-            return { left: safeMargin, top: safeMargin };
+            return { left: leftAlignedLeft, top: topAlignedTop };
         case "top-right":
-            return { left: Math.max(safeMargin, horizontalMax), top: safeMargin };
+            return { left: rightAlignedLeft, top: topAlignedTop };
         case "bottom-left":
-            return { left: safeMargin, top: Math.max(safeMargin, verticalMax) };
+            return { left: leftAlignedLeft, top: bottomAlignedTop };
         case "bottom-right":
         default:
-            return { left: Math.max(safeMargin, horizontalMax), top: Math.max(safeMargin, verticalMax) };
+            return { left: rightAlignedLeft, top: bottomAlignedTop };
     }
 }
 
@@ -171,7 +175,7 @@ export async function watermarkAndPreferJpeg(
     }
 
     const sharp = sharpLib as any;
-    const sharpFactory = (buffer: Buffer) => sharp(buffer, { failOn: "truncate" });
+    const sharpFactory = (buffer: Buffer) => sharp(buffer);
 
     const marginPx = Math.max(0, options.marginPx ?? 24);
     const logoWidthRatio = options.logoWidthRatio ?? 0.22;
