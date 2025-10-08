@@ -117,6 +117,19 @@ The application follows a full-stack architecture with clear separation between 
 
 ## Recent Changes
 
+### Gender Inclusivity and Improved AI Prompts (October 8, 2025)
+- Added 'neutral' gender option alongside existing 'male' and 'female' options
+- Updated frontend types, form validation, and UI to support neutral gender selection
+- Fixed backend schema validation to accept all three gender options
+- Imported improved prompt templates from previous version (5 templates total):
+  - Raleigh Superhero v1 and v2 (action shot variant)
+  - Baseball All-Star v1
+  - Basketball All-Star v1
+  - Football Champion v1
+- Added enhanced prompt variants with detailed, cinematic descriptions for better AI generation
+- Prompt variants now include specific Raleigh, NC landmark references and professional styling guidance
+- All prompts support dynamic placeholders: {petName}, {petBreed} for personalization
+
 ### Centralized Color Management System (July 25, 2025)
 - Implemented centralized color management using CSS custom properties and Tailwind configuration
 - Updated primary brand color to deep purple (#55005c / hsl(297, 100%, 18%))
