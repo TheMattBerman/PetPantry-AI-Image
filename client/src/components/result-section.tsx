@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import SuccessModal from "@/components/success-modal";
-import { Download, Facebook, Twitter, Instagram, Link2, Trophy, Users, Plus, Heart, Share, Share2, Download as DownloadIcon, Star, Zap, Award, Target, MessageCircle, Loader2 } from "lucide-react";
+import { Download, Facebook, Twitter, Instagram, Link2, Trophy, Users, Plus, Heart, Share, Share2, Download as DownloadIcon, Star, Zap, Award, Target, MessageCircle, Loader2, Flame, Shield, Rocket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { TransformationResult, PetData, Theme, PersonaContent } from "@/lib/types";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Dialog,
@@ -21,6 +22,394 @@ type ShareCapableNavigator = Navigator & {
   share?: (data: ShareData) => Promise<void>;
   canShare?: (data: ShareData) => boolean;
 };
+
+type SeededRandom = () => number;
+
+interface FunFactContext {
+  random: SeededRandom;
+  petName: string;
+  breed?: string;
+  traits: string[];
+}
+
+interface FunFactStatDefinition {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  description: string;
+}
+
+interface FunFactFallback {
+  stats: FunFactStatDefinition[];
+  quote: string;
+  funFact: string;
+}
+
+interface BreedTemplate {
+  matches: string[];
+  templates: string[];
+}
+
+const hashString = (value: string): number => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+const createSeededRandom = (seed: string): SeededRandom => {
+  let state = hashString(seed) || 1;
+  return () => {
+    state = (state * 1664525 + 1013904223) % 0x100000000;
+    return state / 0x100000000;
+  };
+};
+
+const randomInt = (random: SeededRandom, min: number, max: number): number => {
+  return Math.floor(random() * (max - min + 1)) + min;
+};
+
+const pickOne = <T,>(random: SeededRandom, items: T[]): T => {
+  if (items.length === 0) {
+    throw new Error("Cannot pick from empty array");
+  }
+  const index = Math.floor(random() * items.length);
+  return items[index];
+};
+
+const pickMany = <T,>(random: SeededRandom, items: T[], count: number): T[] => {
+  const pool = [...items];
+  const selections: T[] = [];
+  for (let i = 0; i < count && pool.length > 0; i += 1) {
+    const index = Math.floor(random() * pool.length);
+    selections.push(pool.splice(index, 1)[0]);
+  }
+  return selections;
+};
+
+const formatTemplate = (template: string, ctx: FunFactContext): string => {
+  const breedText = ctx.breed ?? "pet";
+  return template
+    .replace(/\{name\}/g, ctx.petName)
+    .replace(/\{breed\}/g, breedText)
+    .replace(/\{breedOrPet\}/g, ctx.breed ? `${ctx.breed}` : "pet");
+};
+
+const baseballStatTemplates: Array<(ctx: FunFactContext) => FunFactStatDefinition> = [
+  (ctx) => {
+    const digits = randomInt(ctx.random, 820, 999);
+    const descriptions = [
+      "Snack success average the scouts can’t stop talking about",
+      "{name} connects with every toss like a stadium legend",
+      "Pitchers fear {name}'s sweet spot more than rain delays",
+    ];
+    return {
+      icon: <Target className="w-5 h-5 text-blue-500" />,
+      label: "Batting Average",
+      value: `.${digits.toString().padStart(3, "0")}`,
+      description: formatTemplate(pickOne(ctx.random, descriptions), ctx),
+    };
+  },
+  (ctx) => {
+    const homers = randomInt(ctx.random, 48, 168);
+    const descriptions = [
+      "Fence-clearing fetch wins this season",
+      "Crowd-pleasing moonshots sparked by tail wag momentum",
+      "{name} sends every chew toy into the cheap seats",
+    ];
+    return {
+      icon: <Award className="w-5 h-5 text-green-500" />,
+      label: "Home Run Streak",
+      value: homers.toString(),
+      description: formatTemplate(pickOne(ctx.random, descriptions), ctx),
+    };
+  },
+  (ctx) => {
+    const steals = randomInt(ctx.random, 35, 120);
+    const descriptions = [
+      "Bases swiped with dazzling pawwork",
+      "Every treat bowl is home plate to {name}",
+      "Catchers say {name} is impossible to throw out",
+    ];
+    return {
+      icon: <Flame className="w-5 h-5 text-orange-500" />,
+      label: "Stolen Snacks",
+      value: steals.toString(),
+      description: formatTemplate(pickOne(ctx.random, descriptions), ctx),
+    };
+  },
+  (ctx) => {
+    const fans = randomInt(ctx.random, 18, 72);
+    const descriptions = [
+      "Members in the official paw-sitive fan club",
+      "Neighborhood supporters chanting every at-bat",
+      "Season ticket holders for {name}'s highlight reel",
+    ];
+    return {
+      icon: <Users className="w-5 h-5 text-purple-500" />,
+      label: "Fan Club Size",
+      value: `${fans}K`,
+      description: formatTemplate(pickOne(ctx.random, descriptions), ctx),
+    };
+  },
+  (ctx) => {
+    const victories = randomInt(ctx.random, 12, 58);
+    const descriptions = [
+      "Walk-off fetches sealed with a wag",
+      "Legendary comebacks started in the backyard",
+      "{name} delivers clutch plays whenever the snacks are on the line",
+    ];
+    return {
+      icon: <Trophy className="w-5 h-5 text-amber-500" />,
+      label: "Game-Winning Fetches",
+      value: victories.toString(),
+      description: formatTemplate(pickOne(ctx.random, descriptions), ctx),
+    };
+  },
+];
+
+const baseballQuotePools: Record<string, string[]> = {
+  Playful: [
+    "{name} turns every inning into a sprint to the snack table—and always slides in safe!",
+    "Give {name} a tennis ball and the park turns into a sold-out stadium.",
+  ],
+  Loyal: [
+    "{name} is the teammate who never lets a fly ball—or a friend—hit the ground.",
+    "Clubhouse rule: follow {name}'s lead and you’ll never lose heart or hustle.",
+  ],
+  Smart: [
+    "{name} reads the defense faster than any catcher I’ve ever coached.",
+    "Game film shows {name} predicting plays three treats ahead of everyone else.",
+  ],
+  Energetic: [
+    "Pitchers can’t outpace {name}'s zoomies between bases.",
+    "Every dugout chant starts with {name}'s unstoppable tail wind.",
+  ],
+  default: [
+    "I’ve never seen a pet keep the crowd buzzing like {name} does every inning.",
+    "{name} shows up ready to put Raleigh on the map every single game.",
+    "If heart won championships, {name} would already have a trophy case full.",
+  ],
+};
+
+const baseballBreedTemplates: BreedTemplate[] = [
+  {
+    matches: ["golden retriever"],
+    templates: [
+      "Golden Retrievers like {name} were bred for world-class fetch—no wonder scouts love that glove paw.",
+      "{name} channels generations of Golden Retriever hustle into highlight-reel grabs.",
+    ],
+  },
+  {
+    matches: ["border collie"],
+    templates: [
+      "Border Collies like {name} call the plays before they happen—base coaches can’t keep up!",
+      "No defensive shift can fool a Border Collie legend like {name}.",
+    ],
+  },
+  {
+    matches: ["labrador"],
+    templates: [
+      "Labradors like {name} have the stamina to play extra innings and still beg for batting practice.",
+      "{name}'s Labrador roots make every dive into the outfield grass a guaranteed catch.",
+    ],
+  },
+];
+
+const baseballGeneralFunFacts: Array<(ctx: FunFactContext) => string> = [
+  (ctx) => {
+    const laps = randomInt(ctx.random, 3, 9);
+    return `${ctx.petName} runs ${laps} celebratory laps around home plate after every big win.`;
+  },
+  (ctx) => {
+    const treats = randomInt(ctx.random, 24, 64);
+    const label = ctx.breed ? ` the ${ctx.breed}` : "";
+    return `${ctx.petName}${label} keeps a locker stocked with ${treats} lucky treats for the team.`;
+  },
+  (ctx) => {
+    const bpm = randomInt(ctx.random, 80, 128);
+    return `Scouts report ${ctx.petName}'s tail wags hit ${bpm} bpm when the crowd starts chanting.`;
+  },
+  (ctx) => {
+    const minutes = randomInt(ctx.random, 15, 45);
+    return `${ctx.petName} studies highlight reels for ${minutes} minutes before every imaginary doubleheader.`;
+  },
+];
+
+const superheroStatTemplates: Array<(ctx: FunFactContext) => FunFactStatDefinition> = [
+  (ctx) => {
+    const power = randomInt(ctx.random, 9000, 22000);
+    return {
+      icon: <Zap className="w-5 h-5 text-purple-500" />,
+      label: "Power Level",
+      value: power.toLocaleString(),
+      description: "Over maximum cuteness containment threshold",
+    };
+  },
+  (ctx) => {
+    const rescues = randomInt(ctx.random, 180, 980);
+    const descriptions = [
+      "Neighborhood hearts saved from villainous boredom",
+      "Successful missions logged in the hero playbook",
+      "Families rescued from low cuddle levels",
+    ];
+    return {
+      icon: <Award className="w-5 h-5 text-red-500" />,
+      label: "Rescue Missions",
+      value: rescues.toString(),
+      description: formatTemplate(pickOne(ctx.random, descriptions), ctx),
+    };
+  },
+  (ctx) => {
+    const speed = randomInt(ctx.random, 120, 280);
+    const descriptions = [
+      "Zoomies measured in heroic miles per hour",
+      "Faster than a delivery driver with treats",
+      "{name} sprints past villains before they can blink",
+    ];
+    return {
+      icon: <Rocket className="w-5 h-5 text-sky-500" />,
+      label: "Flight Speed",
+      value: `${speed} mph`,
+      description: formatTemplate(pickOne(ctx.random, descriptions), ctx),
+    };
+  },
+  (ctx) => {
+    const rating = pickOne(ctx.random, ["LEGENDARY", "MYTHIC", "UNSTOPPABLE", "COSMIC"]);
+    const descriptions = [
+      "Coach-certified hero rating",
+      "Citizens agree: {name} is top-tier hero material",
+      "Caped community ranks {name} among the greats",
+    ];
+    return {
+      icon: <Star className="w-5 h-5 text-yellow-500" />,
+      label: "Hero Rating",
+      value: rating,
+      description: formatTemplate(pickOne(ctx.random, descriptions), ctx),
+    };
+  },
+  (ctx) => {
+    const shield = randomInt(ctx.random, 92, 100);
+    return {
+      icon: <Shield className="w-5 h-5 text-green-500" />,
+      label: "Shield Strength",
+      value: `${shield}%`,
+      description: "Success rate when guarding the household perimeter",
+    };
+  },
+];
+
+const superheroQuotePools: Record<string, string[]> = {
+  Brave: [
+    "With great paws comes great responsibility—and {name} charges in first every time.",
+    "Danger takes one look at {name} and decides to nap instead.",
+  ],
+  Protective: [
+    "{name} keeps the whole block safe, one wag at a time.",
+    "No trespassing sign needed—{name}'s watchful eyes handle it.",
+  ],
+  Energetic: [
+    "Faster than a zoomie, more powerful than a vacuum cleaner—that’s {name}.",
+    "{name} converts every ounce of energy into pure heroics.",
+  ],
+  Loyal: [
+    "You can’t spell ‘loyal’ without {name}—well, you can, but it’s less inspiring.",
+    "{name} guards their people like a pro with a heart-shaped badge.",
+  ],
+  default: [
+    "Every neighborhood deserves a defender like {name}—cape or no cape.",
+    "{name}'s hero training never stops, even during nap time.",
+    "Cape optional, courage guaranteed whenever {name} shows up.",
+  ],
+};
+
+const superheroBreedTemplates: BreedTemplate[] = [
+  {
+    matches: ["german shepherd"],
+    templates: [
+      "German Shepherds like {name} have been real-life heroes for over a century—this cape is well earned.",
+      "{name}'s German Shepherd instincts make every mission a success story.",
+    ],
+  },
+  {
+    matches: ["husky"],
+    templates: [
+      "Huskies like {name} have the stamina to run patrol routes for miles without breaking a sweat.",
+      "{name}'s Husky heritage powers blizzards of heroic zoomies.",
+    ],
+  },
+  {
+    matches: ["rottweiler"],
+    templates: [
+      "Rottweilers like {name} were bred to protect—no wonder this hero takes guard duty seriously.",
+      "{name}'s Rottweiler roots fuel a heart as strong as their super bark.",
+    ],
+  },
+];
+
+const superheroGeneralFunFacts: Array<(ctx: FunFactContext) => string> = [
+  (ctx) => {
+    const patrols = randomInt(ctx.random, 4, 11);
+    return `${ctx.petName} can finish ${patrols} rooftop patrols before breakfast.`;
+  },
+  (ctx) => {
+    const kids = randomInt(ctx.random, 5, 14);
+    return `Neighborhood kids awarded ${ctx.petName} ${kids} honorary cape pins.`;
+  },
+  (ctx) => {
+    const response = randomInt(ctx.random, 2, 7);
+    return `When duty calls, ${ctx.petName} suits up in ${response} tail wags flat.`;
+  },
+  (ctx) => {
+    const naps = randomInt(ctx.random, 6, 18);
+    return `Legend says ${ctx.petName} recharges with ${naps}-minute power naps between missions.`;
+  },
+];
+
+const selectQuote = (pools: Record<string, string[]>, ctx: FunFactContext): string => {
+  const entries = Object.entries(pools);
+  const traitMatch = ctx.traits.find((trait) =>
+    entries.some(([key]) => key.toLowerCase() === trait.toLowerCase())
+  );
+  const resolvedKey = traitMatch
+    ? entries.find(([key]) => key.toLowerCase() === traitMatch.toLowerCase())?.[0]
+    : undefined;
+  const pool = (resolvedKey && pools[resolvedKey]) || pools.default;
+  return formatTemplate(pickOne(ctx.random, pool), ctx);
+};
+
+const buildFunFactFromTemplates = (
+  ctx: FunFactContext,
+  breedTemplates: BreedTemplate[],
+  generalBuilders: Array<(ctx: FunFactContext) => string>,
+): string => {
+  if (ctx.breed) {
+    const breedLower = ctx.breed.toLowerCase();
+    const match = breedTemplates.find((template) =>
+      template.matches.some((candidate) => breedLower.includes(candidate))
+    );
+    if (match) {
+      const template = pickOne(ctx.random, match.templates);
+      return formatTemplate(template, ctx);
+    }
+  }
+
+  const builder = pickOne(ctx.random, generalBuilders);
+  return builder(ctx);
+};
+
+const buildBaseballFallback = (ctx: FunFactContext): FunFactFallback => ({
+  stats: pickMany(ctx.random, baseballStatTemplates, 3).map((builder) => builder(ctx)),
+  quote: selectQuote(baseballQuotePools, ctx),
+  funFact: buildFunFactFromTemplates(ctx, baseballBreedTemplates, baseballGeneralFunFacts),
+});
+
+const buildSuperheroFallback = (ctx: FunFactContext): FunFactFallback => ({
+  stats: pickMany(ctx.random, superheroStatTemplates, 3).map((builder) => builder(ctx)),
+  quote: selectQuote(superheroQuotePools, ctx),
+  funFact: buildFunFactFromTemplates(ctx, superheroBreedTemplates, superheroGeneralFunFacts),
+});
 
 interface ResultSectionProps {
   transformationResult: TransformationResult;
