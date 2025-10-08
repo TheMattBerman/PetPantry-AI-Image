@@ -51,6 +51,7 @@ export interface BaseballCardInput {
   petImageUrl: string;
   petName: string;
   petBreed?: string;
+  gender?: string;
   team?: string;
   position?: string;
   stats?: Record<string, number>;
@@ -60,6 +61,7 @@ export interface SuperheroInput {
   petImageUrl: string;
   petName: string;
   petBreed?: string;
+  gender?: string;
   heroName?: string;
   powers?: string[];
 }
@@ -110,7 +112,8 @@ export async function createBaseballCard(input: BaseballCardInput): Promise<Tran
       .replaceAll('{petName}', input.petName)
       .replaceAll('{petBreed}', convertBreedToReadable(input.petBreed || 'pet'))
       .replaceAll('{team}', input.team || '')
-      .replaceAll('{position}', input.position || 'Good Boy/Girl');
+      .replaceAll('{position}', input.position || 'Good Boy/Girl')
+      .replaceAll('{gender}', input.gender || 'pet');
 
     // Resolve the image input using our shared helper
     const resolvedImage = await resolveImageInput(input.petImageUrl);
@@ -314,7 +317,8 @@ export async function createSuperheroImage(input: SuperheroInput): Promise<Trans
       .replaceAll('{petName}', input.petName)
       .replaceAll('{petBreed}', convertBreedToReadable(input.petBreed || 'pet'))
       .replaceAll('{heroName}', heroName)
-      .replaceAll('{powers}', powers);
+      .replaceAll('{powers}', powers)
+      .replaceAll('{gender}', input.gender || 'pet');
 
     // Resolve the image input using our shared helper
     const resolvedImage = await resolveImageInput(input.petImageUrl);

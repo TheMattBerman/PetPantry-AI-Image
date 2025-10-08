@@ -62,7 +62,7 @@ export default function ProcessingSection({ selectedTheme, onComplete, uploadedF
         theme: selectedTheme,
         petBreed: petData.breed || '',
         traits: petData.traits || [],
-        customMessage: petData.customMessage || '',
+        gender: petData.gender,
         originalImageUrl: uploadResult.fileUrl
       };
 

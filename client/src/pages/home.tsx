@@ -46,11 +46,11 @@ export default function Home() {
                 <img src="/images/the-pet-pantry-logo.png" alt="The Pet Pantry logo" className="h-16 w-auto" />
               </a>
             </div>
-            <div className="flex items-center space-x-3">
+            {/* <div className="flex items-center space-x-3">
               <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                 FREE TOOL
               </span>
-            </div>
+            </div> */}
           </div>
         </div>
       </header>
@@ -122,16 +122,16 @@ export default function Home() {
             <p className="text-gray-300 mb-1">Transforming pets into stars, one photo at a time</p>
             <p className="text-gray-400 text-sm mb-4">Nutrition you can trust, service you can depend on.</p>
             <div className="flex justify-center space-x-6 text-sm">
-              <a href="#" className="text-gray-300 hover:text-white">Privacy Policy</a>
-              <a href="#" className="text-gray-300 hover:text-white">Terms of Service</a>
-              <a href="#" className="text-gray-300 hover:text-white">Contact Us</a>
+              <a href="https://www.thepetpantry.com/about/privacy-policy/" className="text-gray-300 hover:text-white">Privacy Policy</a>
+              {/* <a href="#" className="text-gray-300 hover:text-white">Terms of Service</a> */}
+              <a href="https://www.thepetpantry.com/contact-2/" className="text-gray-300 hover:text-white">Contact Us</a>
             </div>
             <div className="mt-6 border-t border-gray-700 pt-4 text-xs text-gray-400">
               Powered by{' '}
               <a
                 href="https://emerald.digital"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 className="text-gray-200 hover:text-white"
               >
                 Emerald Digital

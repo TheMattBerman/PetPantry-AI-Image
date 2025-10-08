@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sparkles, Heart, Star, Zap, Award, Shield, Crown } from "lucide-react";
 import type { Theme, PetData } from "@/lib/types";
 
@@ -16,7 +16,9 @@ const petSchema = z.object({
   name: z.string().min(1, "Pet name is required"),
   breed: z.string().optional(),
   traits: z.array(z.string()).max(3, "Please select up to 3 traits"),
-  customMessage: z.string().optional(),
+  gender: z.enum(['male', 'female'], {
+    required_error: 'Please select a gender',
+  }),
 });
 
 interface CustomizationFormProps {
@@ -53,6 +55,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
     register,
     handleSubmit,
     setValue,
+    control,
     formState: { errors, isValid },
   } = useForm<PetData>({
     resolver: zodResolver(petSchema),
@@ -71,7 +74,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
       newTraits = selectedTraits.filter(t => t !== traitName);
     }
     setSelectedTraits(newTraits);
-    setValue('traits', newTraits);
+    setValue('traits', newTraits, { shouldValidate: true });
   };
 
   const handleBreedChange = (value: string) => {
@@ -83,6 +86,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
     onSubmit({
       ...data,
       traits: selectedTraits,
+      gender: data.gender,
     });
   };
 
@@ -158,7 +162,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                   ))}
                 </SelectContent>
               </Select>
-              
+
               {/* Custom breed input when "Other" is selected */}
               {selectedBreed === 'other' && (
                 <div className="mt-4 animate-fade-in">
@@ -187,20 +191,20 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                   <p className="text-sm text-gray-500">Choose up to 3 that fit best</p>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 {TRAITS.map((trait) => {
                   const isSelected = selectedTraits.includes(trait.name);
                   const isDisabled = !isSelected && selectedTraits.length >= 3;
-                  
+
                   return (
                     <div
                       key={trait.name}
                       className={`
                         relative p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer
-                        ${isSelected 
-                          ? 'border-brand-accent bg-brand-accent/5 shadow-md transform scale-105' 
-                          : isDisabled 
+                        ${isSelected
+                          ? 'border-brand-accent bg-brand-accent/5 shadow-md transform scale-105'
+                          : isDisabled
                             ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
                             : 'border-gray-200 bg-white hover:border-brand-accent/50 hover:bg-brand-accent/5'
                         }
@@ -218,11 +222,11 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className={`
                           w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
-                          ${isSelected 
-                            ? 'border-brand-accent bg-brand-accent' 
+                          ${isSelected
+                            ? 'border-brand-accent bg-brand-accent'
                             : 'border-gray-300'
                           }
                         `}>
@@ -235,7 +239,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                   );
                 })}
               </div>
-              
+
               <div className="flex items-center justify-between mt-4 p-3 bg-blue-50 rounded-lg">
                 <span className="text-sm text-blue-700 font-medium">
                   {selectedTraits.length}/3 traits selected
@@ -247,7 +251,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
             </CardContent>
           </Card>
 
-          {/* Custom Message - Enhanced */}
+          {/* Gender Selection */}
           <Card className="border-0 shadow-md bg-white/80 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center mb-4">
@@ -255,19 +259,59 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                   <Star className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <Label htmlFor="customMessage" className="text-lg font-semibold text-gray-800">
-                    Add a special message
+                  <Label className="text-lg font-semibold text-gray-800">
+                    What's your pet's gender?
                   </Label>
-                  <p className="text-sm text-gray-500">Optional - make it extra personal</p>
+                  <p className="text-sm text-gray-500">Helps us tailor their heroic look</p>
                 </div>
               </div>
-              <Textarea
-                id="customMessage"
-                {...register('customMessage')}
-                placeholder="e.g., 'The goodest boy in the neighborhood!' or 'Defender of treats everywhere!'"
-                rows={3}
-                className="text-base p-4 border-2 border-gray-200 focus:border-brand-accent rounded-xl resize-none transition-all"
+              <Controller
+                name="gender"
+                control={control}
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value)}
+                    className="flex flex-col sm:flex-row gap-3"
+                  >
+                    <Label
+                      htmlFor="gender-male"
+                      className={`flex-1 border-2 rounded-xl p-4 cursor-pointer transition-all ${field.value === 'male'
+                          ? 'border-brand-accent bg-brand-accent/5 shadow-md'
+                          : 'border-gray-200 bg-white hover:border-brand-accent/50 hover:bg-brand-accent/5'
+                        }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <RadioGroupItem id="gender-male" value="male" className="mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-gray-800 text-lg">Male</span>
+                          <p className="text-sm text-gray-500">Bold hero vibes</p>
+                        </div>
+                      </div>
+                    </Label>
+                    <Label
+                      htmlFor="gender-female"
+                      className={`flex-1 border-2 rounded-xl p-4 cursor-pointer transition-all ${field.value === 'female'
+                          ? 'border-brand-accent bg-brand-accent/5 shadow-md'
+                          : 'border-gray-200 bg-white hover:border-brand-accent/50 hover:bg-brand-accent/5'
+                        }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <RadioGroupItem id="gender-female" value="female" className="mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-gray-800 text-lg">Female</span>
+                          <p className="text-sm text-gray-500">Fierce heroine energy</p>
+                        </div>
+                      </div>
+                    </Label>
+                  </RadioGroup>
+                )}
               />
+              {errors.gender && (
+                <p className="text-red-500 text-sm mt-3 flex items-center">
+                  <span className="mr-1">⚠️</span> {errors.gender.message}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -278,8 +322,8 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
               disabled={!isValid}
               className={`
                 w-full py-6 text-lg font-bold rounded-2xl transition-all duration-300 shadow-lg
-                ${isValid 
-                  ? 'bg-gradient-to-r from-brand-primary to-brand-primary-light hover:from-brand-primary-light hover:to-brand-primary text-white shadow-brand-primary/25 hover:shadow-xl transform hover:scale-105' 
+                ${isValid
+                  ? 'bg-gradient-to-r from-brand-primary to-brand-primary-light hover:from-brand-primary-light hover:to-brand-primary text-white shadow-brand-primary/25 hover:shadow-xl transform hover:scale-105'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }
               `}
@@ -287,7 +331,7 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
               <Sparkles className="mr-3 w-6 h-6" />
               Create My Pet's {selectedTheme === 'baseball' ? 'Sports Card' : 'Superhero Identity'}
             </Button>
-            
+
             {!isValid && (
               <p className="text-center text-sm text-gray-500 mt-3">
                 Please enter your pet's name to continue

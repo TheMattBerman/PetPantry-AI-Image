@@ -2,11 +2,13 @@ export type Theme = 'baseball' | 'superhero';
 
 export type Step = 'hero' | 'upload' | 'theme' | 'customize' | 'email-gate' | 'processing' | 'result';
 
+export type PetGender = 'male' | 'female';
+
 export interface PetData {
   name: string;
   breed?: string;
   traits: string[];
-  customMessage?: string;
+  gender: PetGender;
 }
 
 export interface TransformationResult {

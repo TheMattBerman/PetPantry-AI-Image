@@ -96,7 +96,7 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           <span className="text-brand-primary">North Carolina Legend!</span>
         </h2>
         <p className="text-xl text-gray-600 mb-8">
-          Turn your furry friend into a baseball legend or superhero with our AI-powered transformation tool.
+          Turn your furry friend into a sports legend or superhero with our AI-powered transformation tool.
           Create shareable content that will make your pet the star they deserve to be!
         </p>
 
