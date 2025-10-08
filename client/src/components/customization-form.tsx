@@ -277,8 +277,8 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                     <Label
                       htmlFor="gender-male"
                       className={`flex-1 border-2 rounded-xl p-4 cursor-pointer transition-all ${field.value === 'male'
-                          ? 'border-brand-accent bg-brand-accent/5 shadow-md'
-                          : 'border-gray-200 bg-white hover:border-brand-accent/50 hover:bg-brand-accent/5'
+                        ? 'border-brand-accent bg-brand-accent/5 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-brand-accent/50 hover:bg-brand-accent/5'
                         }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -292,8 +292,8 @@ export default function CustomizationForm({ selectedTheme, onSubmit }: Customiza
                     <Label
                       htmlFor="gender-female"
                       className={`flex-1 border-2 rounded-xl p-4 cursor-pointer transition-all ${field.value === 'female'
-                          ? 'border-brand-accent bg-brand-accent/5 shadow-md'
-                          : 'border-gray-200 bg-white hover:border-brand-accent/50 hover:bg-brand-accent/5'
+                        ? 'border-brand-accent bg-brand-accent/5 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-brand-accent/50 hover:bg-brand-accent/5'
                         }`}
                     >
                       <div className="flex items-center space-x-3">

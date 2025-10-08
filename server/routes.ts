@@ -322,13 +322,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let uploadExt = 'jpg';
             try {
               // Apply watermark and force JPEG output
-              const { buffer: stampedBuffer, extension, contentType, watermarked } = await watermarkAndPreferJpeg(Buffer.from(arrayBuffer), sourceContentType, {
-                marginPx: 24,
-                logoWidthRatio: 0.22,
-                minLogoWidthPx: 64,
-                jpegQuality: 90,
+              const candidatePositionsEnv = process.env.WATERMARK_CANDIDATE_POSITIONS;
+              const candidatePositions = candidatePositionsEnv
+                ? candidatePositionsEnv.split(",").map((p) => p.trim()).filter(Boolean)
+                : undefined;
+              const autoPlacementEnv = process.env.WATERMARK_AUTO_PLACEMENT;
+              const autoPlacement = autoPlacementEnv === undefined ? true : autoPlacementEnv !== "false";
+
+              const { buffer: stampedBuffer, extension, contentType, watermarked, metadata } = await watermarkAndPreferJpeg(Buffer.from(arrayBuffer), sourceContentType, {
+                marginPx: Number(process.env.WATERMARK_MARGIN_PX ?? 32),
+                logoWidthRatio: Number(process.env.WATERMARK_LOGO_WIDTH_RATIO ?? 0.18),
+                minLogoWidthPx: Number(process.env.WATERMARK_MIN_LOGO_PX ?? 48),
+                jpegQuality: Number(process.env.WATERMARK_JPEG_QUALITY ?? 90),
+                forcePosition: process.env.WATERMARK_FORCE_POSITION as any,
+                fallbackPosition: (process.env.WATERMARK_FALLBACK_POSITION as any) || "bottom-right",
+                candidatePositions: candidatePositions as any,
+                autoPlacement,
               });
-              console.log("Watermark result:", { watermarked, extension, contentType });
+              console.log("Watermark result:", { watermarked, extension, contentType, metadata });
               uploadBuffer = stampedBuffer;
               uploadContentType = contentType;
               uploadExt = extension || 'jpg';

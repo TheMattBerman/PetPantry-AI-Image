@@ -19,9 +19,14 @@ async function main() {
     const buffer = Buffer.from(await res.arrayBuffer());
 
     const result = await watermarkAndPreferJpeg(buffer, contentType, {
-        marginPx: 24,
-        logoWidthRatio: 0.22,
-        minLogoWidthPx: 64,
+        marginPx: Number(process.env.WATERMARK_MARGIN_PX ?? 32),
+        logoWidthRatio: Number(process.env.WATERMARK_LOGO_WIDTH_RATIO ?? 0.18),
+        minLogoWidthPx: Number(process.env.WATERMARK_MIN_LOGO_PX ?? 48),
+        jpegQuality: Number(process.env.WATERMARK_JPEG_QUALITY ?? 90),
+        forcePosition: process.env.WATERMARK_FORCE_POSITION as any,
+        fallbackPosition: (process.env.WATERMARK_FALLBACK_POSITION as any) || "bottom-right",
+        candidatePositions: process.env.WATERMARK_CANDIDATE_POSITIONS?.split(",").map(p => p.trim()).filter(Boolean) as any,
+        autoPlacement: process.env.WATERMARK_AUTO_PLACEMENT === "false" ? false : true,
     });
 
     const outPath = "/home/runner/workspace/tmp-watermark-debug.jpg";
