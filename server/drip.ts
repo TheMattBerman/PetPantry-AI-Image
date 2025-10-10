@@ -18,19 +18,29 @@ function getAuthHeader() {
     return `Basic ${encoded}`;
 }
 
-async function syncSubscriber(email: string, transformationId?: string, userId?: string) {
+async function syncSubscriber(email: string, transformationId?: string, userId?: string, imageUrl?: string | null) {
     const accountId = process.env.DRIP_ACCOUNT_ID as string;
     const url = `https://api.getdrip.com/v2/${accountId}/subscribers`;
+
+    const customFields: Record<string, string> = {};
+    if (transformationId) {
+        customFields.last_transformation_id = transformationId;
+    }
+    if (userId) {
+        customFields.last_transformation_user_id = userId;
+    }
+    if (imageUrl) {
+        customFields.ai_image_url = imageUrl;
+    }
 
     const payload = {
         subscribers: [
             {
                 email,
                 double_optin: false,
-                custom_fields: {
-                    last_transformation_id: transformationId,
-                    last_transformation_user_id: userId,
-                },
+                ...(Object.keys(customFields).length > 0
+                    ? { custom_fields: customFields }
+                    : {}),
             },
         ],
     };
@@ -92,7 +102,7 @@ export async function trackDownloadInDrip(options: DripEventOptions) {
     }
 
     try {
-        await syncSubscriber(options.email, options.transformationId, options.userId);
+        await syncSubscriber(options.email, options.transformationId, options.userId, options.imageUrl);
     } catch (error) {
         console.error("Failed to sync subscriber with Drip", error);
         // Continue to try sending the event even if subscriber sync fails
