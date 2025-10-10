@@ -443,13 +443,23 @@ export default function ResultSection({ transformationResult, petData, selectedT
     default: '@thepetpantrync',
   };
 
-  const buildShareCaption = (platform?: string) => {
+  const buildShareCaption = (
+    platform?: string,
+    options?: {
+      includeLink?: boolean;
+    },
+  ) => {
+    const includeLink = options?.includeLink ?? true;
     const platformHandle = platformHandles[platform ?? 'default'] || platformHandles.default;
     const themeHighlight = selectedTheme === 'baseball' ? 'a legendary baseball all-star ⚾' : 'an epic superhero 🦸‍♂️';
     const baseText = `🎉 Meet ${petData.name}! Now ${themeHighlight}!`;
     const challengeLine = 'I dare you to make your pet a legend!';
-    const callout = `${platformHandle} ${SHARE_SITE_URL}`;
-    const caption = `${baseText}\n${challengeLine}\n${callout}`;
+    const calloutParts = [platformHandle];
+    if (includeLink) {
+      calloutParts.push(SHARE_SITE_URL);
+    }
+    const callout = calloutParts.filter(Boolean).join(' ');
+    const caption = [baseText, challengeLine, callout].filter(Boolean).join('\n');
 
     return {
       caption,
@@ -498,6 +508,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
       setNativeShareAvailable(true);
     }
   }, []);
+
 
   const validatePhoneNumber = (value: string) => {
     const trimmed = value.trim();
@@ -661,23 +672,54 @@ export default function ResultSection({ transformationResult, petData, selectedT
     }
   };
 
+  const resolveShareImage = useCallback(async () => {
+    const imageUrl = transformationResult.transformedImageUrl;
+    if (!imageUrl) {
+      return null;
+    }
+
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch image for sharing');
+    }
+
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      return null;
+    }
+
+    const fileType = blob.type || 'image/jpeg';
+    const extension = fileType.includes('/') ? fileType.split('/')[1] : 'jpg';
+    const fileName = `${petData.name}-${selectedTheme}-legend.${extension}`;
+    return new File([blob], fileName, { type: fileType });
+  }, [petData.name, selectedTheme, transformationResult.transformedImageUrl]);
+
+  useEffect(() => {
+    if (typeof window !== 'object') {
+      return;
+    }
+
+    const nav = window.navigator as ShareCapableNavigator;
+    if (typeof nav.share === 'function') {
+      setNativeShareAvailable(true);
+    }
+  }, []);
+
   const handleSocialShare = async (platform: string) => {
     const shareUrl = window.location.href;
-    const imageUrl = transformationResult.transformedImageUrl;
-
     const { caption: enhancedShareText } = buildShareCaption(platform);
+    const imageUrl = transformationResult.transformedImageUrl;
 
     let url = '';
     switch (platform) {
       case 'facebook':
-        // Facebook Open Graph will automatically pull image from URL
         url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(enhancedShareText)}`;
         break;
       case 'twitter':
         // Twitter/X will show image preview from URL
         url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(enhancedShareText)}&url=${encodeURIComponent(shareUrl)}`;
         break;
-      case 'instagram':
+      case 'instagram': {
         // For Instagram, copy enhanced text with instructions to save image
         const instagramText = `${enhancedShareText}\n\n📱 Tip: Save the image from ${shareUrl} and post it with this caption!`;
         try {
@@ -693,7 +735,8 @@ export default function ResultSection({ transformationResult, petData, selectedT
           });
         }
         return;
-      case 'download-share':
+      }
+      case 'download-share': {
         // Special case for downloading image with share text
         try {
           await navigator.clipboard.writeText(enhancedShareText);
@@ -720,6 +763,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
         });
         await recordShare();
         return;
+      }
     }
 
     if (url) {
@@ -750,23 +794,13 @@ export default function ResultSection({ transformationResult, petData, selectedT
 
     const { caption } = buildShareCaption();
     const shareTitle = `${petData.name} is a legend!`;
-    const imageUrl = transformationResult.transformedImageUrl;
 
     let files: File[] | undefined;
 
     try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch image for sharing');
-      }
-      const blob = await response.blob();
-
-      if (blob.size > 0) {
-        const fileType = blob.type || 'image/jpeg';
-        const extension = fileType.includes('/') ? fileType.split('/')[1] : 'jpg';
-        const fileName = `${petData.name}-${selectedTheme}-legend.${extension}`;
-        const candidateFiles = [new File([blob], fileName, { type: fileType })];
-
+      const file = await resolveShareImage();
+      if (file) {
+        const candidateFiles = [file];
         if (!nav.canShare || nav.canShare({ files: candidateFiles })) {
           files = candidateFiles;
         }
