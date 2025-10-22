@@ -88,19 +88,32 @@ async function sendDownloadEvent({ email, action, transformationId, imageUrl, us
 
     const eventAction = action || process.env.DRIP_DOWNLOAD_EVENT || DEFAULT_DOWNLOAD_EVENT;
 
+    const properties: Record<string, string> = {};
+    if (transformationId) {
+        properties.transformation_id = transformationId;
+    }
+    if (imageUrl) {
+        properties.image_url = imageUrl;
+    }
+    if (userId) {
+        properties.user_id = userId;
+    }
+
+    const eventPayload: Record<string, unknown> = {
+        email,
+        action: eventAction,
+    };
+
+    if (Object.keys(properties).length > 0) {
+        eventPayload.properties = properties;
+    }
+
+    if (occurredAt) {
+        eventPayload.occurred_at = occurredAt;
+    }
+
     const payload = {
-        events: [
-            {
-                email,
-                action: eventAction,
-                properties: {
-                    transformation_id: transformationId,
-                    image_url: imageUrl,
-                    user_id: userId,
-                },
-                ...(occurredAt ? { occurred_at: occurredAt } : {}),
-            },
-        ],
+        events: [eventPayload],
     };
 
     const response = await fetch(url, {

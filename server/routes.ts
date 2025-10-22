@@ -34,6 +34,7 @@ const emailCaptureSchema = z.object({
   email: z.string().email(),
   name: z.string().optional(),
   transformationId: z.string(),
+  imageUrl: z.string().url().optional(),
 });
 
 const customPromptSchema = z.object({
