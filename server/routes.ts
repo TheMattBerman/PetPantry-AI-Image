@@ -409,9 +409,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: validatedData.email,
           name: validatedData.name,
         });
+      } else if (validatedData.name && !user.name) {
+        user = await storage.updateUser(user.id, { name: validatedData.name }) ?? user;
       }
 
-      // Update transformation stats (increment downloads) and fetch transformation details
       const transformation = await storage.getPetTransformation(validatedData.transformationId);
       let transformedImageUrl: string | null = null;
       if (transformation) {
@@ -423,19 +424,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transformedImageUrl = transformation.transformedImageUrl || null;
       }
 
-      // Kick off Drip workflow
-      await trackDownloadInDrip({
+      const resolvedName = validatedData.name ?? user?.name ?? transformation?.petName ?? undefined;
+
+      const dripResult = await trackDownloadInDrip({
         email: validatedData.email,
+        name: resolvedName,
         transformationId: validatedData.transformationId,
         imageUrl: transformedImageUrl,
         userId: user?.id,
+        occurredAt: new Date().toISOString(),
       });
 
       res.json({
         success: true,
         message: "Download flow triggered",
         userId: user.id,
+        userName: resolvedName ?? null,
         imageUrl: transformedImageUrl,
+        drip: dripResult,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

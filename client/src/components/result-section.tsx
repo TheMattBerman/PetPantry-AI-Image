@@ -416,10 +416,11 @@ interface ResultSectionProps {
   petData: PetData;
   selectedTheme: Theme;
   userEmail: string;
+  userName?: string | null;
   onCreateAnother: () => void;
 }
 
-export default function ResultSection({ transformationResult, petData, selectedTheme, userEmail, onCreateAnother }: ResultSectionProps) {
+export default function ResultSection({ transformationResult, petData, selectedTheme, userEmail, userName, onCreateAnother }: ResultSectionProps) {
   const { toast } = useToast();
   const [persona, setPersona] = useState<PersonaContent | null>(null);
   const [loadingPersona, setLoadingPersona] = useState(false);
@@ -882,6 +883,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: userEmail,
+          name: userName,
           transformationId: transformationResult.id,
         }),
       });

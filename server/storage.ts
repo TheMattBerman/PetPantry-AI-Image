@@ -8,6 +8,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
 
   // Pet transformation methods
   getPetTransformation(id: string): Promise<PetTransformation | undefined>;
@@ -49,6 +50,24 @@ export class DatabaseStorage implements IStorage {
       .values([insertUser])
       .returning();
     return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const sanitizedUpdates: Partial<User> = Object.fromEntries(
+      Object.entries(updates).filter(([, value]) => value !== undefined && value !== null)
+    ) as Partial<User>;
+
+    if (Object.keys(sanitizedUpdates).length === 0) {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user || undefined;
+    }
+
+    const [user] = await db
+      .update(users)
+      .set(sanitizedUpdates)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
   }
 
   async getPetTransformation(id: string): Promise<PetTransformation | undefined> {

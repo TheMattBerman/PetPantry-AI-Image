@@ -17,6 +17,7 @@ export default function Home() {
     selectedTheme: null,
     petData: null,
     userEmail: null,
+    userName: null,
     transformationResult: null,
   });
 
@@ -31,6 +32,7 @@ export default function Home() {
       selectedTheme: null,
       petData: null,
       userEmail: null,
+      userName: null,
       transformationResult: null,
     });
   };
@@ -86,7 +88,7 @@ export default function Home() {
           <EmailGate
             petData={appState.petData!}
             selectedTheme={appState.selectedTheme!}
-            onEmailSubmit={(email) => updateState({ userEmail: email, currentStep: 'processing' })}
+            onEmailSubmit={({ email, name }) => updateState({ userEmail: email, userName: name, currentStep: 'processing' })}
           />
         )}
 
@@ -105,6 +107,7 @@ export default function Home() {
             petData={appState.petData!}
             selectedTheme={appState.selectedTheme!}
             userEmail={appState.userEmail!}
+            userName={appState.userName}
             onCreateAnother={resetApp}
           />
         )}

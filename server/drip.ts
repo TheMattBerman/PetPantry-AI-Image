@@ -4,6 +4,8 @@ interface DripEventOptions {
     transformationId?: string;
     imageUrl?: string | null;
     userId?: string;
+    name?: string;
+    occurredAt?: string;
 }
 
 const DEFAULT_DOWNLOAD_EVENT = "download_high_res_image";
@@ -18,7 +20,19 @@ function getAuthHeader() {
     return `Basic ${encoded}`;
 }
 
-async function syncSubscriber(email: string, transformationId?: string, userId?: string, imageUrl?: string | null) {
+interface SyncSubscriberResult {
+    success: boolean;
+    status: number;
+    body?: unknown;
+}
+
+interface SendEventResult {
+    success: boolean;
+    status: number;
+    body?: unknown;
+}
+
+async function syncSubscriber(email: string, transformationId?: string, userId?: string, imageUrl?: string | null, name?: string | null): Promise<SyncSubscriberResult> {
     const accountId = process.env.DRIP_ACCOUNT_ID as string;
     const url = `https://api.getdrip.com/v2/${accountId}/subscribers`;
 
@@ -33,16 +47,21 @@ async function syncSubscriber(email: string, transformationId?: string, userId?:
         customFields.ai_image_url = imageUrl;
     }
 
+    const subscriber: Record<string, unknown> = {
+        email,
+        double_optin: false,
+    };
+
+    if (name) {
+        subscriber.first_name = name;
+    }
+
+    if (Object.keys(customFields).length > 0) {
+        subscriber.custom_fields = customFields;
+    }
+
     const payload = {
-        subscribers: [
-            {
-                email,
-                double_optin: false,
-                ...(Object.keys(customFields).length > 0
-                    ? { custom_fields: customFields }
-                    : {}),
-            },
-        ],
+        subscribers: [subscriber],
     };
 
     const response = await fetch(url, {
@@ -58,9 +77,12 @@ async function syncSubscriber(email: string, transformationId?: string, userId?:
         const text = await response.text();
         throw new Error(`Drip subscriber sync failed (${response.status}): ${text}`);
     }
+
+    const body = await response.json().catch(() => undefined);
+    return { success: true, status: response.status, body };
 }
 
-async function sendDownloadEvent({ email, action, transformationId, imageUrl, userId }: DripEventOptions) {
+async function sendDownloadEvent({ email, action, transformationId, imageUrl, userId, occurredAt }: DripEventOptions): Promise<SendEventResult> {
     const accountId = process.env.DRIP_ACCOUNT_ID as string;
     const url = `https://api.getdrip.com/v2/${accountId}/events`;
 
@@ -76,6 +98,7 @@ async function sendDownloadEvent({ email, action, transformationId, imageUrl, us
                     image_url: imageUrl,
                     user_id: userId,
                 },
+                ...(occurredAt ? { occurred_at: occurredAt } : {}),
             },
         ],
     };
@@ -93,26 +116,58 @@ async function sendDownloadEvent({ email, action, transformationId, imageUrl, us
         const text = await response.text();
         throw new Error(`Drip event send failed (${response.status}): ${text}`);
     }
+
+    const body = await response.json().catch(() => undefined);
+    return { success: true, status: response.status, body };
 }
 
-export async function trackDownloadInDrip(options: DripEventOptions) {
+interface TrackDownloadResult {
+    skipped: boolean;
+    subscriberSync?: SyncSubscriberResult;
+    eventSend?: SendEventResult;
+    errors?: Array<{ stage: "subscriber" | "event"; error: string }>;
+}
+
+export async function trackDownloadInDrip(options: DripEventOptions): Promise<TrackDownloadResult> {
     if (!hasDripConfig()) {
         console.warn("Skipping Drip tracking: missing DRIP_ACCOUNT_ID or DRIP_API_TOKEN env vars");
-        return;
+        return { skipped: true };
     }
 
+    const result: TrackDownloadResult = {
+        skipped: false,
+        errors: [],
+    };
+
     try {
-        await syncSubscriber(options.email, options.transformationId, options.userId, options.imageUrl);
+        result.subscriberSync = await syncSubscriber(options.email, options.transformationId, options.userId, options.imageUrl, options.name ?? null);
+        console.info("Drip subscriber sync successful", {
+            email: options.email,
+            status: result.subscriberSync.status,
+        });
     } catch (error) {
         console.error("Failed to sync subscriber with Drip", error);
         // Continue to try sending the event even if subscriber sync fails
+        result.errors?.push({ stage: "subscriber", error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
-        await sendDownloadEvent(options);
+        result.eventSend = await sendDownloadEvent(options);
+        console.info("Drip event send successful", {
+            email: options.email,
+            action: options.action || process.env.DRIP_DOWNLOAD_EVENT || DEFAULT_DOWNLOAD_EVENT,
+            status: result.eventSend.status,
+        });
     } catch (error) {
         console.error("Failed to send download event to Drip", error);
+        result.errors?.push({ stage: "event", error: error instanceof Error ? error.message : String(error) });
     }
+
+    if (result.errors && result.errors.length === 0) {
+        delete result.errors;
+    }
+
+    return result;
 }
 
 

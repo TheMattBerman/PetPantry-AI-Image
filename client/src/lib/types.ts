@@ -60,5 +60,6 @@ export interface AppState {
   selectedTheme: Theme | null;
   petData: PetData | null;
   userEmail: string | null;
+  userName?: string | null;
   transformationResult: TransformationResult | null;
 }

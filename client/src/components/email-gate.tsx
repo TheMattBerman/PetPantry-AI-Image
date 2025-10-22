@@ -17,7 +17,7 @@ const emailSchema = z.object({
 interface EmailGateProps {
   petData: PetData;
   selectedTheme: Theme;
-  onEmailSubmit: (email: string) => void;
+  onEmailSubmit: (payload: { email: string; name?: string }) => void;
 }
 
 export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: EmailGateProps) {
@@ -34,11 +34,11 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
 
   const onFormSubmit = async (data: { email: string; name?: string }) => {
     setIsSubmitting(true);
-    
+
     // Simulate brief validation delay
     await new Promise(resolve => setTimeout(resolve, 500));
-    
-    onEmailSubmit(data.email);
+
+    onEmailSubmit({ email: data.email, name: data.name });
   };
 
   return (
@@ -63,7 +63,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
           </div>
 
           <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">
-            🎉 Almost Ready! 
+            🎉 Almost Ready!
             <span className="block text-brand-primary mt-1">
               {petData.name}'s Epic Transformation Awaits
             </span>
@@ -116,7 +116,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
                   <p className="text-sm text-gray-500">Your email keeps your creation safe</p>
                 </div>
               </div>
-              
+
               <div className="relative">
                 <Input
                   id="email"
@@ -130,7 +130,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
                   <Heart className="w-5 h-5 text-red-400 animate-pulse" />
                 </div>
               </div>
-              
+
               {errors.email && (
                 <p className="text-red-500 text-sm mt-2 flex items-center">
                   <span className="mr-1">⚠️</span> {errors.email.message}
@@ -153,7 +153,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
                   <p className="text-sm text-gray-500">Optional - for a personal touch</p>
                 </div>
               </div>
-              
+
               <Input
                 id="name"
                 {...register('name')}
@@ -175,7 +175,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
                   🎁 What You Get (FREE!)
                 </h5>
               </div>
-              
+
               <div className="grid gap-3">
                 <div className="flex items-center p-3 bg-white/80 rounded-lg transition-all hover:bg-white hover:shadow-md">
                   <Download className="text-green-500 mr-3 w-6 h-6" />
@@ -221,7 +221,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
               className={`
                 w-full py-6 text-xl font-bold rounded-2xl transition-all duration-300 shadow-xl mobile-button
                 ${isValid && !isSubmitting
-                  ? 'bg-gradient-to-r from-brand-primary via-brand-primary-light to-brand-primary hover:from-brand-primary-light hover:to-brand-primary text-white shadow-brand-primary/25 hover:shadow-2xl transform hover:scale-105' 
+                  ? 'bg-gradient-to-r from-brand-primary via-brand-primary-light to-brand-primary hover:from-brand-primary-light hover:to-brand-primary text-white shadow-brand-primary/25 hover:shadow-2xl transform hover:scale-105'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }
               `}
@@ -238,7 +238,7 @@ export default function EmailGate({ petData, selectedTheme, onEmailSubmit }: Ema
                 </div>
               )}
             </Button>
-            
+
             {!isValid && (
               <p className="text-center text-sm text-gray-500 mt-3 animate-fade-in">
                 Just add your email above to unlock the magic ✨
