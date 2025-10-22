@@ -432,8 +432,9 @@ export default function ResultSection({ transformationResult, petData, selectedT
   const [isDownloadPending, setIsDownloadPending] = useState(false);
   const [isDownloadRecorded, setIsDownloadRecorded] = useState(false);
   const [isShareRecording, setIsShareRecording] = useState(false);
-  const [directDownloadUrl, setDirectDownloadUrl] = useState<string | null>(null);
+  const [directDownloadUrl, setDirectDownloadUrl] = useState<string | null>(() => transformationResult.transformedImageUrl ?? null);
   const [directDownloadError, setDirectDownloadError] = useState<string | null>(null);
+  const [hasAutoTriggeredEmail, setHasAutoTriggeredEmail] = useState(false);
 
   const SHARE_SITE_URL = 'https://transform.thepetpantry.com';
 
@@ -856,6 +857,90 @@ export default function ResultSection({ transformationResult, petData, selectedT
     document.body.removeChild(link);
   };
 
+  const sendEmailCapture = useCallback(async (mode: "auto" | "download") => {
+    if (!transformationResult?.id || !userEmail) {
+      return;
+    }
+
+    if (mode === "download") {
+      setIsDownloadPending(true);
+      setDirectDownloadError(null);
+    }
+
+    try {
+      const payload: Record<string, unknown> = {
+        email: userEmail,
+        transformationId: transformationResult.id,
+      };
+
+      if (userName) {
+        payload.name = userName;
+      }
+
+      if (transformationResult.transformedImageUrl) {
+        payload.imageUrl = transformationResult.transformedImageUrl;
+      }
+
+      const response = await fetch('/api/email-capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Email capture failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const finalUrl = data?.imageUrl || transformationResult.transformedImageUrl || directDownloadUrl;
+
+      if (data?.imageUrl) {
+        setDirectDownloadUrl(data.imageUrl);
+      } else if (transformationResult.transformedImageUrl) {
+        setDirectDownloadUrl(transformationResult.transformedImageUrl);
+      }
+
+      if (mode === "download") {
+        if (finalUrl) {
+          triggerDirectDownload(finalUrl);
+        }
+        setIsDownloadRecorded(true);
+        setIsSuccessModalOpen(true);
+        toast({
+          title: "Download started",
+          description: "Check your inbox for the high-res image!",
+        });
+      } else {
+        setHasAutoTriggeredEmail(true);
+        setIsDownloadRecorded(true);
+      }
+
+      return data;
+    } catch (error) {
+      if (mode === "download") {
+        console.error('Failed to trigger email capture', error);
+        setDirectDownloadError('We could not start the download automatically. Please try again later.');
+        toast({
+          title: "Download failed",
+          description: "We couldn't send the high-res image. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        console.error('Failed to auto-trigger email capture', error);
+      }
+    } finally {
+      if (mode === "download") {
+        setIsDownloadPending(false);
+      }
+    }
+  }, [directDownloadUrl, toast, transformationResult, triggerDirectDownload, userEmail, userName]);
+
+  useEffect(() => {
+    if (!hasAutoTriggeredEmail && userEmail && transformationResult?.id) {
+      void sendEmailCapture("auto");
+    }
+  }, [hasAutoTriggeredEmail, sendEmailCapture, transformationResult?.id, userEmail]);
+
   const handleDownloadHighRes = async () => {
     if (isDownloadPending || isDownloadRecorded) {
       if (directDownloadUrl) {
@@ -874,47 +959,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
       return;
     }
 
-    try {
-      setIsDownloadPending(true);
-      setDirectDownloadError(null);
-
-      const response = await fetch('/api/email-capture', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: userEmail,
-          name: userName,
-          transformationId: transformationResult.id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Email capture failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data?.imageUrl) {
-        setDirectDownloadUrl(data.imageUrl);
-        triggerDirectDownload(data.imageUrl);
-      }
-
-      setIsDownloadRecorded(true);
-      setIsSuccessModalOpen(true);
-      toast({
-        title: "Download started",
-        description: "Check your inbox for the high-res image!",
-      });
-    } catch (error) {
-      console.error('Failed to trigger email capture', error);
-      setDirectDownloadError('We could not start the download automatically. Please try again later.');
-      toast({
-        title: "Download failed",
-        description: "We couldn't send the high-res image. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloadPending(false);
-    }
+    await sendEmailCapture("download");
   };
 
   const handleSmsShare = async () => {

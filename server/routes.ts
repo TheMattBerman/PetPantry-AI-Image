@@ -425,7 +425,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transformedImageUrl = transformation.transformedImageUrl || null;
       }
 
-      const resolvedName = validatedData.name ?? user?.name ?? transformation?.petName ?? undefined;
+      const synthesizeName = () => {
+        if (validatedData.name) {
+          return validatedData.name;
+        }
+        if (user?.name) {
+          return user.name;
+        }
+        if (transformation?.petName) {
+          return transformation.petName;
+        }
+        return undefined;
+      };
+
+      const resolvedName = synthesizeName();
 
       const dripResult = await trackDownloadInDrip({
         email: validatedData.email,
