@@ -938,6 +938,7 @@ export default function ResultSection({ transformationResult, petData, selectedT
   useEffect(() => {
     if (!hasAutoTriggeredEmail && userEmail && transformationResult?.id) {
       void sendEmailCapture("auto");
+      setHasAutoTriggeredEmail(true);
     }
   }, [hasAutoTriggeredEmail, sendEmailCapture, transformationResult?.id, userEmail]);
 
