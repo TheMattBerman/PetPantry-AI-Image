@@ -46,6 +46,9 @@ async function syncSubscriber(email: string, transformationId?: string, userId?:
     if (imageUrl) {
         customFields.ai_image_url = imageUrl;
     }
+    if (name) {
+        customFields.first_name = name;
+    }
 
     const subscriber: Record<string, unknown> = {
         email,
