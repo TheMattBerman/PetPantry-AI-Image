@@ -443,6 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dripResult = await trackDownloadInDrip({
         email: validatedData.email,
         name: resolvedName,
+        petName: transformation?.petName ?? undefined,
         transformationId: validatedData.transformationId,
         imageUrl: transformedImageUrl,
         userId: user?.id,

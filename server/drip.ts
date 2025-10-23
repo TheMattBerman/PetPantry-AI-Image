@@ -6,6 +6,7 @@ interface DripEventOptions {
     userId?: string;
     name?: string;
     occurredAt?: string;
+    petName?: string;
 }
 
 const DEFAULT_DOWNLOAD_EVENT = "download_high_res_image";
@@ -32,7 +33,7 @@ interface SendEventResult {
     body?: unknown;
 }
 
-async function syncSubscriber(email: string, transformationId?: string, userId?: string, imageUrl?: string | null, name?: string | null): Promise<SyncSubscriberResult> {
+async function syncSubscriber(email: string, transformationId?: string, userId?: string, imageUrl?: string | null, name?: string | null, petName?: string | null): Promise<SyncSubscriberResult> {
     const accountId = process.env.DRIP_ACCOUNT_ID as string;
     const url = `https://api.getdrip.com/v2/${accountId}/subscribers`;
 
@@ -48,6 +49,9 @@ async function syncSubscriber(email: string, transformationId?: string, userId?:
     }
     if (name) {
         customFields.first_name = name;
+    }
+    if (petName) {
+        customFields.pet_name = petName;
     }
 
     const subscriber: Record<string, unknown> = {
@@ -156,7 +160,7 @@ export async function trackDownloadInDrip(options: DripEventOptions): Promise<Tr
     };
 
     try {
-        result.subscriberSync = await syncSubscriber(options.email, options.transformationId, options.userId, options.imageUrl, options.name ?? null);
+        result.subscriberSync = await syncSubscriber(options.email, options.transformationId, options.userId, options.imageUrl, options.name ?? null, options.petName ?? null);
         console.info("Drip subscriber sync successful", {
             email: options.email,
             status: result.subscriberSync.status,
