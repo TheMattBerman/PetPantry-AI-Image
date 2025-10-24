@@ -93,7 +93,7 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
       <div className="max-w-3xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
           Transform Your Pet Into A{" "}
-          <span className="text-brand-primary">North Carolina Legend!</span>
+          <br></br><span className="text-brand-primary">North Carolina Legend!</span>
         </h2>
         <p className="text-xl text-gray-600 mb-8">
           Turn your furry friend into a sports legend or superhero with our AI-powered transformation tool.
